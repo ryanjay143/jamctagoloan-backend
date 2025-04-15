@@ -38,7 +38,26 @@ class ListOfMemberController extends Controller
         $attendanceToday = Attendance::with('member')->where('status', 0)
             ->whereDate('updated_at', $today)
             ->get();
+
+        $kidsAttendedTodayCount = Attendance::with('member')->where('status', 0)
+        ->whereDate('updated_at', $today)
+        ->whereHas('member', function($query) {
+            $query->where('role', 'Kids Ministry');
+        })->count();
+
+        $kidsAttendedToday = Attendance::with('member')->where('status', 0)
+        ->whereDate('updated_at', $today)
+        ->whereHas('member', function($query) {
+            $query->where('role', 'Kids Ministry');
+        })->get();
+
         
+
+        $adultAttendedTodayCount = Attendance::with('member')->where('status', 0)
+        ->whereDate('updated_at', $today)
+        ->whereHas('member', function($query) {
+            $query->where('role', '!=', 'Kids Ministry');
+        })->count();
 
         $absentTodayCount = Attendance::where('status', 1)
         ->whereDate('updated_at', $today)
@@ -57,16 +76,20 @@ class ListOfMemberController extends Controller
         ->get();
 
         $lastSunday = Carbon::now()->previous(Carbon::SUNDAY)->toDateString();
-        $attendedLastSundayCount = Attendance::
+        $attendedLastSundayCount = Attendance::with('member')->
         where('status', 0)
         ->whereDate('updated_at', $lastSunday)->count();
 
-        $attendedLastSunday = Attendance::
+        $attendedLastSunday = Attendance::with('member')->
         where('status', 0)
         ->whereDate('updated_at', $lastSunday)->get();
 
 
-        $overAllAttendance = Attendance::with('member')->get();
+        $overAllAttendance = Attendance::with('member')
+        ->whereHas('member', function($query) {
+            $query->where('church_status', 0);
+        })
+        ->get();
 
         // Return a JSON response with separate keys for each list
         return response()->json([
@@ -80,7 +103,10 @@ class ListOfMemberController extends Controller
             'firstTimer' => $firstTimer,
             'absentToday' => $absentToday,
             'attendedLastSunday' => $attendedLastSunday,
-            'overAllAttendance' => $overAllAttendance
+            'overAllAttendance' => $overAllAttendance,
+            'kidsAttendedTodayCount' => $kidsAttendedTodayCount,
+            'adultAttendedTodayCount' => $adultAttendedTodayCount,
+            'kidsAttendedToday' => $kidsAttendedToday
         ]);
     }
 
@@ -209,8 +235,31 @@ class ListOfMemberController extends Controller
         /**
      * Remove the specified resource from storage.
      */
+
     public function destroy(string $id)
     {
-        //
+        // Get today's date
+        $today = Carbon::today();
+
+        // Find the attendance record with its related member for today
+        $attendance = Attendance::with('member')
+            ->where('id', $id)
+            ->whereDate('created_at', $today) // Assuming 'created_at' is the date field
+            ->first();
+
+        if ($attendance) {
+            // Update the attendance_status of the related member
+            $member = $attendance->member;
+            if ($member) {
+                $member->attendance_status = 0;
+                $member->save();
+            }
+
+            // Delete the attendance record
+            $attendance->delete();
+        }
+
+        // Optionally, return a response or redirect
+        return response()->json(['message' => 'Attendance deleted and member status updated successfully.']);
     }
 }
