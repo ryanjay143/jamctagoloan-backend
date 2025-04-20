@@ -16,6 +16,7 @@ Route::middleware('auth:sanctum')->get('/user', function (Request $request) {
 
 Route::apiResource('list-of-member', ListOfMemberController::class);
 Route::apiResource('tithes', TithesController::class);
+Route::post('expenses', [TithesController::class, 'create']);
 
 Route::post('edit-member/{id}', [EditMemberController::class, 'edit']);
 

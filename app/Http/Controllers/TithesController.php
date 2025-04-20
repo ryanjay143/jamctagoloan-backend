@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use App\Models\ListOfMemberModel;
+use App\Models\Expense;
 use App\Models\Tithes;
 use Carbon\Carbon;
 
@@ -18,26 +19,72 @@ class TithesController extends Controller
         ->orderBy('created_at', 'asc')
         ->get();
 
-        $today = Carbon::today();
-
         $tithes = Tithes::with('member')
-        ->whereDate('created_at', $today)
         ->orderBy('created_at', 'desc')
         ->get();
 
+        $today = Carbon::today()->toDateString();
+        $lastSunday = Carbon::now('Asia/Manila')->previous(Carbon::SUNDAY);
+
+        $totalAmount = Tithes::sum('amount');
+        $totalAmountToday = Tithes::
+        whereDate('created_at', $today)
+        ->sum('amount');
+        $totalAmountLastSunday = Tithes::whereDate('created_at', $lastSunday)
+        ->sum('amount');
+
+        $expenses = Expense::orderBy('created_at', 'desc')
+        ->get();
+        // $totalExpenses = Expense::sum('amount');
+        // $totalExpensesToday = Expense::whereDate('created_at', $today)
+        // ->sum('amount');
+        // $totalExpensesLastSunday = Expense::whereDate('created_at', $lastSunday)
+        // ->sum('amount');
+        // $totalAmount = $totalAmount - $totalExpenses;
+        // $totalAmountToday = $totalAmountToday - $totalExpensesToday;
+        // $totalAmountLastSunday = $totalAmountLastSunday - $totalExpensesLastSunday;
+        // Return the response as JSON
+        
+
         return response()->json([
             'listOfMembers' => $listOfMembers,
-            'tithes' => $tithes
+            'tithes' => $tithes,
+            'totalAmount' => $totalAmount,
+            'totalAmountToday' => $totalAmountToday,
+            'totalAmountLastSunday' => $totalAmountLastSunday,
+            'expenses' => $expenses,
         ], 200);
     }
 
     /**
      * Show the form for creating a new resource.
      */
-    public function create()
+    public function create(Request $request)
     {
-        //
+        // Validate the request data for expenses
+        $validatedData = $request->validate([
+            'expenses' => 'required|array',
+            'expenses.*.title' => 'required|string',
+            'expenses.*.amount' => 'required|numeric',
+            'expenses.*.date_created' => 'required|date',
+        ]);
+
+        $createdExpenses = [];
+        foreach ($validatedData['expenses'] as $expenseData) {
+            $expense = new Expense();
+            $expense->title = $expenseData['title'];
+            $expense->amount = $expenseData['amount'];
+            $expense->date_created = $expenseData['date_created'];
+            $expense->save();
+            $createdExpenses[] = $expense;
+        }
+
+        return response()->json([
+            'expenses' => $createdExpenses,
+            'message' => 'Expenses processed successfully.'
+        ], 200);
     }
+    
 
     /**
      * Store a newly created resource in storage.
@@ -84,9 +131,10 @@ class TithesController extends Controller
             }
         }
 
-        $responseMessage = 'Tithes Added successfully';
+       // Construct the response message
+        $responseMessage = 'Tithes added successfully.';
         if (!empty($existingMembers)) {
-            $responseMessage .= '. Tithes Added successfully';
+            $responseMessage .= ' Note: Some members already had tithes recorded today.';
         }
 
         return response()->json([

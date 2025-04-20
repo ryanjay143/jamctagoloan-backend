@@ -9,21 +9,26 @@ class ResetAttendanceStatus extends Command
 {
     /**
      * The name and signature of the console command.
+     *
+     * @var string
      */
     protected $signature = 'reset:attendance';
 
     /**
      * The console command description.
+     *
+     * @var string
      */
-    protected $description = 'Reset attendance_status of all members to 0 every Sunday at 1 AM';
+    protected $description = 'Reset attendance_status of all members to 0 every Sunday';
 
     /**
      * Execute the console command.
+     *
+     * @return int
      */
     public function handle()
     {
-        $updated = ListOfMemberModel::query()->update(['attendance_status' => 0]);
-
-        $this->info("Successfully reset attendance_status for {$updated} members.");
+        ListOfMemberModel::query()->update(['attendance_status' => 0]);
+        $this->info('Successfully reset attendance_status for all members.');
     }
 }

@@ -12,12 +12,10 @@ class Kernel extends ConsoleKernel
      */
     protected function schedule(Schedule $schedule): void
     {
-        // Schedule the reset:attendance command every Sunday at 1:00 AM (Asia/Manila timezone)
         $schedule->command('reset:attendance')
-            ->weeklyOn(0, '1:00') // 0 = Sunday
+            ->sundays()
             ->timezone('Asia/Manila');
     }
-
     /**
      * Register the commands for the application.
      */
