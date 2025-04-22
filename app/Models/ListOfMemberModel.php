@@ -21,5 +21,10 @@ class ListOfMemberModel extends Model
         return $this->hasMany(Attendance::class, 'member_id');
     }
 
+    public function tithes()
+    {
+        return $this->hasMany(Tithe::class, 'member_id');
+    }
+
     
 }
