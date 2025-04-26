@@ -17,6 +17,7 @@ return new class extends Migration
             $table->string('type');
             $table->double('amount');
             $table->string('payment_method');
+            $table->date('date_created')->nullable();
             $table->string('notes')->nullable();
             $table->timestamps();
         });

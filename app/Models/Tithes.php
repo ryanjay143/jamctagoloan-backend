@@ -14,7 +14,8 @@ class Tithes extends Model
         'type', 
         'amount', 
         'payment_method', 
-        'notes'
+        'notes',
+        'date_created',
     ];
 
     public function member()

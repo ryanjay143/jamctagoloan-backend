@@ -19,11 +19,14 @@ class TithesController extends Controller
         ->orderBy('created_at', 'asc')
         ->get();
 
+        $today = Carbon::today()->toDateString();
+
         $tithes = Tithes::with('member')
         ->orderBy('created_at', 'desc')
+        ->whereDate('date_created', $today)
         ->get();
 
-        $today = Carbon::today()->toDateString();
+        
         $lastSunday = Carbon::now('Asia/Manila')->previous(Carbon::SUNDAY);
 
         $totalAmount = Tithes::sum('amount');
@@ -35,15 +38,6 @@ class TithesController extends Controller
 
         $expenses = Expense::orderBy('created_at', 'desc')
         ->get();
-        // $totalExpenses = Expense::sum('amount');
-        // $totalExpensesToday = Expense::whereDate('created_at', $today)
-        // ->sum('amount');
-        // $totalExpensesLastSunday = Expense::whereDate('created_at', $lastSunday)
-        // ->sum('amount');
-        // $totalAmount = $totalAmount - $totalExpenses;
-        // $totalAmountToday = $totalAmountToday - $totalExpensesToday;
-        // $totalAmountLastSunday = $totalAmountLastSunday - $totalExpensesLastSunday;
-        // Return the response as JSON
         
 
         return response()->json([
@@ -98,6 +92,7 @@ class TithesController extends Controller
             'tithes.*.type' => 'required|string',
             'tithes.*.amount' => 'required|numeric',
             'tithes.*.payment_method' => 'required|string',
+            'tithes.*.date_created' => 'nullable|date', // Make date_created optional
             'tithes.*.notes' => 'nullable|string',
         ]);
 
@@ -109,7 +104,7 @@ class TithesController extends Controller
         foreach ($validatedData['tithes'] as $titheData) {
             // Check if a tithes record for this member already exists today
             $existingTithe = Tithes::where('member_id', $titheData['member_id'])
-                ->whereDate('created_at', $today)
+                ->whereDate('date_created', $today)
                 ->first();
 
             if (!$existingTithe) {
@@ -118,6 +113,7 @@ class TithesController extends Controller
                 $tithes->type = $titheData['type'];
                 $tithes->amount = $titheData['amount'];
                 $tithes->payment_method = $titheData['payment_method'];
+                $tithes->date_created = $titheData['date_created'] ?? $today->toDateString(); // Use today's date if not provided
                 $tithes->notes = $titheData['notes'] ?? null;
 
                 // Save the tithes record to the database
@@ -131,7 +127,7 @@ class TithesController extends Controller
             }
         }
 
-       // Construct the response message
+        // Construct the response message
         $responseMessage = 'Tithes added successfully.';
         if (!empty($existingMembers)) {
             $responseMessage .= ' Note: Some members already had tithes recorded today.';
@@ -170,6 +166,7 @@ class TithesController extends Controller
             'amount' => 'required|numeric',
             'type' => 'required|string',
             'payment_method' => 'required|string',
+            'date_created' => 'required|date', 
             'notes' => 'nullable|string',
         ]);
 
@@ -185,6 +182,7 @@ class TithesController extends Controller
         $tithes->amount = $validatedData['amount'];
         $tithes->type = $validatedData['type'];
         $tithes->payment_method = $validatedData['payment_method'];
+        $tithes->date_created = $validatedData['date_created']; 
         $tithes->notes = $validatedData['notes'] ?? null;
 
         // Save the updated tithes record to the database
