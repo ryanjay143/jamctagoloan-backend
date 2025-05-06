@@ -3,12 +3,15 @@ services:
     name: jamcchurch-backend
     env: php
     buildCommand: |
-      composer install --no-dev --optimize-autoloader
+      curl -sS https://getcomposer.org/installer | php
+      php composer.phar install --no-dev --optimize-autoloader
+      cp .env.example .env
+      php artisan config:clear
       php artisan key:generate
       php artisan migrate --force
       npm install
       npm run build
-    startCommand: php artisan serve --host=0.0.0.0 --port=10000
+    startCommand: php artisan serve --host=0.0.0.0 --port=$PORT
     envVars:
       - key: APP_NAME
         value: Laravel
@@ -20,10 +23,12 @@ services:
         value: https://jamcchurch.com
       - key: APP_KEY
         generateValue: true
+
+      # === Database Variables from Railway ===
       - key: DB_CONNECTION
         value: mysql
       - key: DB_HOST
-        value: your-db-host.com
+        value: hopper.proxy.rlwy.net:39230/railway
       - key: DB_PORT
         value: 3306
       - key: DB_DATABASE
@@ -31,7 +36,9 @@ services:
       - key: DB_USERNAME
         value: root
       - key: DB_PASSWORD
-        value: your-db-password
+        value: DnAWPPQDqHaTWbpVHPtChWucrMvOLDeT
+
+      # === Laravel Specific Settings ===
       - key: SESSION_DRIVER
         value: database
       - key: CACHE_STORE
