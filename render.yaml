@@ -24,15 +24,15 @@ services:
       - key: APP_KEY
         generateValue: true
 
-      # === Database Variables from Railway ===
+      # === ✅ FIXED Database Variables from Railway ===
       - key: DB_CONNECTION
         value: mysql
       - key: DB_HOST
-        value: hopper.proxy.rlwy.net:39230/railway
+        value: hopper.proxy.rlwy.net
       - key: DB_PORT
-        value: 3306
+        value: 39230
       - key: DB_DATABASE
-        value: jamctagoloan_backend
+        value: railway
       - key: DB_USERNAME
         value: root
       - key: DB_PASSWORD
