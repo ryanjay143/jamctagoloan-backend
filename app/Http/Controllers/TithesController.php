@@ -203,6 +203,11 @@ class TithesController extends Controller
      */
     public function destroy(string $id)
     {
-        //
+        $tithes = Tithes::find($id);
+        if (!$tithes) {
+            return response()->json(['message' => 'Tithes record not found'], 404);
+        }
+        $tithes->delete();
+        return response()->json(['message' => 'Tithes deleted successfully'], 200);
     }
 }
