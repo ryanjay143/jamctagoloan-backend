@@ -88,11 +88,11 @@ class TithesController extends Controller
         // Validate the request data
         $validatedData = $request->validate([
             'tithes' => 'required|array',
-            'tithes.*.member_id' => 'required|integer',
+            'tithes.*.member_id' => 'nullable|integer', // Make member_id nullable
             'tithes.*.type' => 'required|string',
             'tithes.*.amount' => 'required|numeric',
             'tithes.*.payment_method' => 'required|string',
-            'tithes.*.date_created' => 'nullable|date', // Make date_created optional
+            'tithes.*.date_created' => 'nullable|date', 
             'tithes.*.notes' => 'nullable|string',
         ]);
 
@@ -102,14 +102,18 @@ class TithesController extends Controller
 
         // Iterate over each set of tithes data
         foreach ($validatedData['tithes'] as $titheData) {
-            // Check if a tithes record for this member already exists today
-            $existingTithe = Tithes::where('member_id', $titheData['member_id'])
-                ->whereDate('date_created', $today)
-                ->first();
+            // Skip the check for existing records if member_id is null
+            if ($titheData['member_id'] !== null) {
+                $existingTithe = Tithes::where('member_id', $titheData['member_id'])
+                    ->whereDate('date_created', $today)
+                    ->first();
+            } else {
+                $existingTithe = null;
+            }
 
             if (!$existingTithe) {
                 $tithes = new Tithes();
-                $tithes->member_id = $titheData['member_id'];
+                $tithes->member_id = $titheData['member_id'] ?? null; // Set member_id to null if not provided
                 $tithes->type = $titheData['type'];
                 $tithes->amount = $titheData['amount'];
                 $tithes->payment_method = $titheData['payment_method'];

@@ -11,14 +11,9 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('tithes', function (Blueprint $table) {
+        Schema::create('denomination', function (Blueprint $table) {
             $table->id();
-            $table->string('member_id')->nullable();
-            $table->string('type');
-            $table->double('amount');
-            $table->string('payment_method');
-            $table->date('date_created')->nullable();
-            $table->string('notes')->nullable();
+            $table->integer('total_amount');
             $table->timestamps();
         });
     }
@@ -28,6 +23,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('tithes');
+        Schema::dropIfExists('denomination');
     }
 };

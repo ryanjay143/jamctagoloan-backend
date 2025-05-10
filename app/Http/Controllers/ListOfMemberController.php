@@ -86,6 +86,8 @@ class ListOfMemberController extends Controller
 
 
         $overAllAttendance = Attendance::with('member')
+        ->orderBy('status', 'asc')
+        ->orderBy('created_at', 'asc')
         ->whereHas('member', function($query) {
             $query->where('church_status', 0);
         })
