@@ -133,13 +133,10 @@ class ListOfMemberController extends Controller
             return response()->json($validator->errors(), 422);
         }
 
-        // Check if a photo is uploaded and store it directly in the public directory
+        // Check if a photo is uploaded and store it
         $photoPath = null;
         if ($request->hasFile('photo')) {
-            $photo = $request->file('photo');
-            $photoName = time() . '_' . $photo->getClientOriginalName();
-            $photo->move(public_path('photos'), $photoName);
-            $photoPath = 'photos/' . $photoName;
+            $photoPath = $request->file('photo')->store('photos', 'public');
         }
 
         $listOfMember = ListOfMemberModel::create([
@@ -163,45 +160,29 @@ class ListOfMemberController extends Controller
      * Show the form for editing the specified resource.
      */
     public function edit(Request $request, string $id)
-{
-    $listOfMember = ListOfMemberModel::find($id);
+    {
+        // Find the member by ID
+        $listOfMember = ListOfMemberModel::find($id);
 
-    if (!$listOfMember) {
-        return response()->json(['message' => 'Member not found'], 404);
+        // Check if the member exists
+        if (!$listOfMember) {
+            return response()->json(['message' => 'Member not found'], 404);
+        }
+
+        // Update the member's details with new values from the request
+        $listOfMember->name = $request->input('name', $listOfMember->name);
+        $listOfMember->role = $request->input('role', $listOfMember->role);
+        $listOfMember->photo = $request->input('photo', $listOfMember->photo);
+
+        // Save the updated member details
+        $listOfMember->save();
+
+        // Return a success response with the updated member details
+        return response()->json([
+            'listOfMember' => $listOfMember,
+            'message' => 'Member details updated successfully'
+        ], 200);
     }
-
-    $validator = Validator::make($request->all(), [
-        'name' => 'required|string|max:255',
-        'role' => 'required|string|max:255',
-        'photo' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
-        'church_status' => 'required|integer',
-        'attendance_status' => 'required|integer',
-    ]);
-
-    if ($validator->fails()) {
-        return response()->json($validator->errors(), 422);
-    }
-
-    // Handle file upload for photo
-    if ($request->hasFile('photo')) {
-        $photo = $request->file('photo');
-        $photoName = time() . '_' . $photo->getClientOriginalName();
-        $photo->move(public_path('photos'), $photoName);
-        $listOfMember->photo = 'photos/' . $photoName;
-    }
-
-    // Update the specified fields
-    $listOfMember->name = $request->name;
-    $listOfMember->role = $request->role;
-    $listOfMember->church_status = $request->church_status;
-    $listOfMember->attendance_status = $request->attendance_status;
-    $listOfMember->save();
-
-    return response()->json([
-        'listOfMember' => $listOfMember->load('attendances'),
-        'message' => 'Member updated successfully'
-    ], 200);
-}
 
     /**
      * Update the specified resource in storage.
