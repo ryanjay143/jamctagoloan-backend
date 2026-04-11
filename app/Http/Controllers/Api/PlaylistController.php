@@ -7,6 +7,7 @@ use App\Models\Folder;
 use App\Models\Song;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Storage;
 
 class PlaylistController extends Controller
 {
@@ -103,6 +104,33 @@ class PlaylistController extends Controller
                 'error' => $e->getMessage(),
                 'line' => $e->getLine()
             ], 500);
+        }
+    }
+
+    public function upload(Request $request) {
+        $request->validate([
+            'audio' => 'required|mimes:mp3,wav,ogg|max:30000', // max 30MB
+            'folder_id' => 'required',
+            'title' => 'required'
+        ]);
+
+        if ($request->hasFile('audio')) {
+            $file = $request->file('audio');
+            $path = $file->store('songs', 'public'); 
+            
+            $song = \App\Models\Song::create([
+                'id' => (string) str_replace('.', '', microtime(true)),
+                'folder_id' => $request->folder_id,
+                'title' => $request->title,
+                'artist' => 'Local Upload',
+                'url' => asset('storage/' . $path), 
+                'file_path' => $path,
+                'lyrics' => '',
+                'chords' => '',
+                'order' => 0
+            ]);
+
+            return response()->json($song);
         }
     }
 }

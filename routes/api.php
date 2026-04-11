@@ -22,4 +22,5 @@ Route::post('edit-member/{id}', [EditMemberController::class, 'edit']);
 
 Route::get('/playlists', [PlaylistController::class, 'index']);
 Route::post('/playlists/sync', [PlaylistController::class, 'sync']);
+Route::post('/playlists/upload', [PlaylistController::class, 'upload']);
 
