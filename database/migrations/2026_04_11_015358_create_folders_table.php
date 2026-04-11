@@ -11,9 +11,9 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('denomination', function (Blueprint $table) {
-            $table->id();
-            $table->integer('total_amount');
+        Schema::create('folders', function (Blueprint $table) {
+            $table->string('id')->primary(); // String kay "Date.now()" gikan sa React
+            $table->string('name');
             $table->timestamps();
         });
     }
@@ -23,6 +23,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('denomination');
+        Schema::dropIfExists('folders');
     }
 };
