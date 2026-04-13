@@ -39,22 +39,27 @@ class PlaylistController extends Controller
 
     public function sync(Request $request)
     {
-        // I-kuha ang raw data gikan sa Axios
         $foldersData = $request->all();
 
         try {
             DB::transaction(function() use ($foldersData) {
-                // Kuhaon ang tanang folder ID gikan sa Frontend
+                
+                // 1. RULE: FOLDER DELETION VALIDATION
                 $incomingFolderIds = collect($foldersData)->pluck('id')->filter()->toArray();
                 
-                // I-delete sa DB kadtong mga folder nga WALA na sa Frontend (Gi-delete ni User)
-                if (!empty($incomingFolderIds)) {
-                    Folder::whereNotIn('id', $incomingFolderIds)->delete();
-                } else {
-                    Folder::query()->delete(); // Kung empty ang array gikan sa frontend, i-delete tanan
+                $foldersToDelete = empty($incomingFolderIds) 
+                    ? Folder::all() 
+                    : Folder::whereNotIn('id', $incomingFolderIds)->get();
+
+                foreach ($foldersToDelete as $folderToDelete) {
+                    // I-check kung naa bay kanta sulod ani nga folder
+                    if (Song::where('folder_id', $folderToDelete->id)->exists()) {
+                        throw new \Exception("Cannot delete folder '{$folderToDelete->name}' because it still contains songs. Please empty it first.");
+                    }
+                    $folderToDelete->delete();
                 }
 
-                // I-loop ang matag folder nga nadawat
+                // 2. FOLDER & SONG SYNCING LOOP
                 foreach($foldersData as $folderData) {
                     if (!isset($folderData['id']) || !isset($folderData['name'])) continue;
 
@@ -64,7 +69,6 @@ class PlaylistController extends Controller
                         ['name' => $folderData['name']]
                     );
 
-                    // Kuhaon ang mga songs sulod aning foldera
                     $songs = $folderData['songs'] ?? [];
                     $incomingSongIds = collect($songs)->pluck('id')->filter()->toArray();
                     
@@ -76,9 +80,33 @@ class PlaylistController extends Controller
                     }
 
                     // I-save ang mga kanta (I-mintinar ang han-ay/order para sa Drag and Drop)
+                    $seenUrlsInPayload = []; // Tig-detect if naay duplicate link gikan sa parehas nga request
+
                     foreach($songs as $index => $song) {
                         if (!isset($song['id']) || !isset($song['url'])) continue;
 
+                        // 3. RULE: YOUTUBE LINK EXISTENCE VALIDATION
+                        $isYoutubeLink = str_contains($song['url'], 'youtu');
+
+                        if ($isYoutubeLink) {
+                            // Check kung gi-add niya og kaduha sa usa ka request
+                            if (in_array($song['url'], $seenUrlsInPayload)) {
+                                throw new \Exception("Duplicate YouTube link detected for '{$song['title']}'.");
+                            }
+                            $seenUrlsInPayload[] = $song['url'];
+
+                            // Check sa Database kung nag-exist na ba ni nga link sa maong folder
+                            $existingSong = Song::where('folder_id', $folder->id)
+                                                ->where('url', $song['url'])
+                                                ->where('id', '!=', $song['id'])
+                                                ->first();
+
+                            if ($existingSong) {
+                                throw new \Exception("The YouTube link for '{$song['title']}' already exists in the folder '{$folder->name}'.");
+                            }
+                        }
+
+                        // Kung pasado tanan, i-save/update ang kanta
                         Song::updateOrCreate(
                             ['id' => (string) $song['id']],
                             [
@@ -98,12 +126,11 @@ class PlaylistController extends Controller
             return response()->json(['message' => 'Synced successfully', 'status' => 'success'], 200);
 
         } catch (\Exception $e) {
-            // I-return ang EXACT nga error aron makita nato sa console unsa ang guba
+            // I-return ngadto sa frontend nga 400 Bad Request aron masabtan sa Axios nga naay error sa validation
             return response()->json([
-                'message' => 'Error syncing data', 
-                'error' => $e->getMessage(),
-                'line' => $e->getLine()
-            ], 500);
+                'message' => $e->getMessage(),
+                'status' => 'error'
+            ], 400); 
         }
     }
 
