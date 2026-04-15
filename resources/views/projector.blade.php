@@ -41,7 +41,7 @@
         // --- ECHO CONFIGURATION WITH FALLBACKS ---
         // Kon naay error sa Blade config, gamita ang default values
         window.Echo = new Echo({
-            broadcaster: 'obs',
+            broadcaster: 'reverb',
             key: 'xadx2yzktngfhlyk82rb',
             wsHost: 'jamctagoloan-backend-noqvsxwn.on-forge.com',
             wsPort: 443, // HTTPS port
