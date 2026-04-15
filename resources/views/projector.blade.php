@@ -46,7 +46,7 @@
                     window.Echo = new Echo({
                         broadcaster: 'reverb',
                         key: '{{ env("REVERB_APP_KEY") }}',
-                        wsHost: window.location.hostname,
+                        wsHost: jamctagoloan-backend-noqvsxwn.on-forge.com,
                         wsPort: isSecure ? 443 : 80,
                         wssPort: isSecure ? 443 : 80,
                         forceTLS: isSecure,
