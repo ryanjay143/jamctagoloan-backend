@@ -42,13 +42,12 @@
         // Kon ang Blade variable dili mo-work, i-hardcode ang app key gikan sa .env
        window.Echo = new Echo({
     broadcaster: 'reverb',
-    key: 'xadx2yzktngfhlyk82rb', // Hardcoded key para sigurado
-    wsHost: 'jamctagoloan-backend-noqvsxwn.on-forge.com', // Imong Domain
-    wsPort: 443,
-    wssPort: 443,
-    forceTLS: true,
+    key: '{{ config("broadcasting.connections.reverb.key") }}',
+    wsHost: '{{ config("broadcasting.connections.reverb.host") }}',
+    wsPort: {{ config("broadcasting.connections.reverb.port") }},
+    wssPort: {{ config("broadcasting.connections.reverb.port") }},
+    forceTLS: ({{ config("broadcasting.connections.reverb.scheme") }} === 'https'),
     enabledTransports: ['ws', 'wss'],
-    disableStats: true,
 });
 
         window.Echo.connector.pusher.connection.bind('connected', () => {
