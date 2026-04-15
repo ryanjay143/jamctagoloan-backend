@@ -42,11 +42,11 @@
         // Kon ang Blade variable dili mo-work, i-hardcode ang app key gikan sa .env
        window.Echo = new Echo({
     broadcaster: 'reverb',
-    key: 'hkhmcrulkofmvx6fi2iv',
-    wsHost: 'jamctagoloan-backend-noqvsxwn.on-forge.com',
-    wsPort: 443,         // WSS port
-    wssPort: 443,        // WSS port
-    forceTLS: true,      // KINI ANG PINA-KA IMPORTANTE
+    key: 'xadx2yzktngfhlyk82rb', // Hardcoded key para sigurado
+    wsHost: 'jamctagoloan-backend-noqvsxwn.on-forge.com', // Imong Domain
+    wsPort: 443,
+    wssPort: 443,
+    forceTLS: true,
     enabledTransports: ['ws', 'wss'],
     disableStats: true,
 });
