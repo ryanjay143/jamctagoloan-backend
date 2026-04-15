@@ -41,11 +41,11 @@
         // --- ECHO CONFIGURATION WITH FALLBACKS ---
         // Kon naay error sa Blade config, gamita ang default values
         window.Echo = new Echo({
-            broadcaster: 'reverb',
-            key: '{{ config("broadcasting.connections.reverb.key", "xadx2yzktngfhlyk82rb") }}',
-            wsHost: '{{ config("broadcasting.connections.reverb.host", "jamctagoloan-backend-noqvsxwn.on-forge.com") }}',
-            wsPort: {{ config("broadcasting.connections.reverb.port", 443) }},
-            wssPort: {{ config("broadcasting.connections.reverb.port", 443) }},
+            broadcaster: 'obs',
+            key: 'xadx2yzktngfhlyk82rb',
+            wsHost: 'jamctagoloan-backend-noqvsxwn.on-forge.com',
+            wsPort: 443, // HTTPS port
+            wssPort: 443, // HTTPS port
             forceTLS: true,
             enabledTransports: ['ws', 'wss'],
             disableStats: true,
