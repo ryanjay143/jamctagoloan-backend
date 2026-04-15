@@ -26,9 +26,3 @@ Route::post('/playlists/sync', [PlaylistController::class, 'sync']);
 Route::post('/playlists/upload', [PlaylistController::class, 'upload']);
 
 Route::post('/obs/update', [ObsSyncController::class, 'update']);
-Route::get('/obs/latest', [ObsSyncController::class, 'latest']);
-Route::get('/obs-stream', [ObsSyncController::class, 'stream']);
-
-Route::get('/projector', function () {
-    return view('projector'); // Mao ni ang obs.blade.php
-});
