@@ -10,10 +10,21 @@ use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class ObsSyncController extends Controller
 {
-    public function update(Request $request)
+   public function update(Request $request)
 {
-    $data = $request->all();
+    $data = [
+        'text' => $request->text ?? '',
+        'fontSize' => $request->fontSize ?? 60,
+        'background' => $request->background ?? 'none',
+        'updatedAt' => now()->timestamp * 1000,
+    ];
+
+    // I-save gihapon sa Cache para sa mga mag-refresh nga page
+    Cache::put('obs_live_data', $data, 1440);
+
+    // I-dispatch ang Event (Kini ang mo-trigger sa Reverb/Pusher)
     event(new \App\Events\LyricsUpdated($data));
+
     return response()->json(['ok' => true]);
 }
 
