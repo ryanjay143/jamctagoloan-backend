@@ -16,11 +16,11 @@
             text-shadow: 0 5px 20px rgba(0,0,0,1);
         }
         h1.visible { opacity: 1; transform: scale(1); }
-        .debug-status { position: fixed; bottom: 10px; left: 10px; color: #333; font-size: 10px; }
+        .debug-status { position: fixed; bottom: 10px; left: 10px; color: #555; font-size: 10px; font-family: monospace; }
     </style>
 </head>
 <body>
-    <div id="status" class="debug-status">Connecting...</div>
+    <div id="status" class="debug-status">Initializing...</div>
     <div class="center-container"><h1 id="lyrics">WAITING...</h1></div>
 
     <script>
@@ -38,26 +38,28 @@
             }
         }
 
-        // --- ECHO CONFIGURATION ---
-        // Kon ang Blade variable dili mo-work, i-hardcode ang app key gikan sa .env
-       window.Echo = new Echo({
-    broadcaster: 'reverb',
-    key: '{{ config("broadcasting.connections.reverb.key") }}',
-    wsHost: '{{ config("broadcasting.connections.reverb.host") }}',
-    wsPort: {{ config("broadcasting.connections.reverb.port") }},
-    wssPort: {{ config("broadcasting.connections.reverb.port") }},
-    forceTLS: ({{ config("broadcasting.connections.reverb.scheme") }} === 'https'),
-    enabledTransports: ['ws', 'wss'],
-});
+        // --- ECHO CONFIGURATION WITH FALLBACKS ---
+        // Kon naay error sa Blade config, gamita ang default values
+        window.Echo = new Echo({
+            broadcaster: 'reverb',
+            key: '{{ config("broadcasting.connections.reverb.key", "xadx2yzktngfhlyk82rb") }}',
+            wsHost: '{{ config("broadcasting.connections.reverb.host", "jamctagoloan-backend-noqvsxwn.on-forge.com") }}',
+            wsPort: {{ config("broadcasting.connections.reverb.port", 443) }},
+            wssPort: {{ config("broadcasting.connections.reverb.port", 443) }},
+            forceTLS: true,
+            enabledTransports: ['ws', 'wss'],
+            disableStats: true,
+        });
 
         window.Echo.connector.pusher.connection.bind('connected', () => {
             statusEl.textContent = "CONNECTED TO SERVER";
         });
 
         window.Echo.connector.pusher.connection.bind('error', (err) => {
-            statusEl.textContent = "CONNECTION ERROR: " + err.type;
+            statusEl.textContent = "CONNECTION ERROR: " + (err.type || 'unknown');
         });
 
+        // Pag-paminaw sa Live Update
         window.Echo.channel('lyrics-channel')
             .listen('LyricsUpdated', (e) => {
                 applyData(e.data);
