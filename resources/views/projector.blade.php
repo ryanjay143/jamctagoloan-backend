@@ -12,7 +12,7 @@
         .center-container { height: 100%; display: flex; align-items: center; justify-content: center; padding: 50px; }
         h1 { 
             color: white; text-align: center; text-transform: uppercase; white-space: pre-wrap; 
-            font-weight: 900; opacity: 0; transition: all 0.3s ease;
+            font-weight: 900; opacity: 0; transition: all 0.2s ease;
             text-shadow: 0 5px 20px rgba(0,0,0,1);
         }
         h1.visible { opacity: 1; transform: scale(1); }
@@ -28,76 +28,89 @@
         var statusEl = document.getElementById('status');
 
         function applyData(data) {
-            if (!data) return;
-            lyricsEl.style.fontSize = (data.fontSize || 90) + 'px';
-            if (data.text && data.text.trim() !== "") {
-                lyricsEl.textContent = data.text;
-                lyricsEl.classList.add('visible');
-            } else {
-                lyricsEl.classList.remove('visible');
-            }
-        }
-
-        // --- ECHO CONFIGURATION WITH FALLBACKS ---
-        // Try WebSocket first, but fall back to polling if it fails.
-        var _echoConnected = false;
-        var _pollingStarted = false;
-
-        function startPolling() {
-            if (_pollingStarted) return;
-            _pollingStarted = true;
-            statusEl.textContent = "POLLING (fallback)";
-            // initial
-            fetch('/obs-latest').then(function(r){ return r.json(); }).then(function(d){ applyData(d); });
-            setInterval(function(){
-                fetch('/obs-latest').then(function(r){ return r.json(); }).then(function(d){ applyData(d); });
-            }, 1000);
-        }
-
-        // Probe server before trying WebSocket to avoid noisy WSS errors
-        function initEcho() {
             try {
-                window.Echo = new Echo({
-                    broadcaster: 'reverb',
-                    key: 'xadx2yzktngfhlyk82rb',
-                    wsHost: 'jamctagoloan-backend-noqvsxwn.on-forge.com',
-                    wsPort: 443,
-                    wssPort: 443,
-                    forceTLS: true,
-                    enabledTransports: ['wss', 'ws'],
-                });
+                var parsed = (typeof data === 'string') ? JSON.parse(data) : data;
+                if (!parsed) return;
 
-                window.Echo.connector.pusher.connection.bind('connected', () => {
-                    _echoConnected = true;
-                    statusEl.textContent = "CONNECTED (websocket)";
-                });
+                // Background
+                var bg = parsed.background || 'none';
+                if (bg === 'green') document.body.style.backgroundColor = '#00FF00';
+                else if (bg === 'praise') document.body.style.backgroundColor = '#1e1b4b';
+                else if (bg === 'worship') document.body.style.backgroundColor = '#09090b';
+                else document.body.style.backgroundColor = '#000000';
 
-                window.Echo.connector.pusher.connection.bind('error', (err) => {
-                    console.error("WSS Error:", err);
-                    if (!_echoConnected) startPolling();
-                    else statusEl.textContent = "CONNECTION ERROR";
-                });
+                // Text & Size
+                lyricsEl.style.fontSize = (parsed.fontSize || 60) + 'px';
+                if (parsed.text && parsed.text.trim() !== "") {
+                    lyricsEl.textContent = parsed.text;
+                    lyricsEl.classList.add('visible');
+                } else {
+                    lyricsEl.classList.remove('visible');
+                }
+            } catch(e) { console.error("Parse error", e); }
+        }
 
-                setTimeout(function(){ if (!_echoConnected) startPolling(); }, 2000);
+        // --- FALLBACK: EVENT SOURCE (SSE) ---
+        // Kung mag-error ang WebSockets, mao ni ang mo-salo para paspas gihapon
+        var fallbackTriggered = false;
+        function startSSEFallback() {
+            if (fallbackTriggered) return;
+            fallbackTriggered = true;
+            statusEl.textContent = "CONNECTED (SSE Fallback)";
+            
+            // Note: I-adjust ang URL kung naa sa api.php imong route (e.g. '/api/obs-stream')
+            var es = new EventSource('/obs-stream'); 
+            es.onmessage = function(ev) { applyData(ev.data); };
+            es.onerror = function() { statusEl.textContent = 'RECONNECTING...'; };
+        }
 
-                window.Echo.channel('lyrics-channel').listen('LyricsUpdated', (e) => {
+        // --- DYNAMIC REVERB VARIABLES GIKAN SA .ENV ---
+        const rHost = '{{ env("REVERB_HOST", "127.0.0.1") }}';
+        const rPort = {{ env("REVERB_PORT", 8080) }};
+        const rScheme = '{{ env("REVERB_SCHEME", "http") }}';
+        const rKey = '{{ env("REVERB_APP_KEY", "xadx2yzktngfhlyk82rb") }}';
+
+        try {
+            window.Echo = new Echo({
+                broadcaster: 'reverb',
+                key: rKey,
+                wsHost: rHost,
+                wsPort: rPort,
+                wssPort: rPort,
+                forceTLS: (rScheme === 'https'),
+                enabledTransports: ['ws', 'wss'],
+                disableStats: true,
+            });
+
+            window.Echo.connector.pusher.connection.bind('connected', () => {
+                statusEl.textContent = "CONNECTED (WebSocket)";
+            });
+
+            window.Echo.connector.pusher.connection.bind('error', (err) => {
+                console.error("WSS Error:", err);
+                statusEl.textContent = "SWITCHING TO SSE...";
+                startSSEFallback();
+            });
+
+            window.Echo.channel('lyrics-channel')
+                .listen('LyricsUpdated', (e) => {
                     applyData(e.data);
                 });
-            } catch (ex) {
-                console.error('Echo init failed', ex);
-                startPolling();
-            }
+
+            // Kon dili mo-connect sulod sa 3 segundos, i-trigger ang fallback
+            setTimeout(() => {
+                if (statusEl.textContent === "Initializing...") startSSEFallback();
+            }, 3000);
+
+        } catch (ex) {
+            console.error('Echo init failed', ex);
+            startSSEFallback();
         }
 
-        // Try a simple HTTP probe first. If it responds, attempt Echo/WSS.
-        fetch('/ws-health', { method: 'GET', cache: 'no-store' })
-            .then(function (res) {
-                if (res.ok) initEcho();
-                else startPolling();
-            })
-            .catch(function () {
-                startPolling();
-            });
+        // Initial Load (I-adjust ang URL kung '/api/obs/latest')
+        fetch('/obs/latest').then(r => r.json()).then(d => { 
+            if(Object.keys(d || {}).length) applyData(d); 
+        }).catch(() => console.log("Initial load failed"));
     </script>
 </body>
 </html>
