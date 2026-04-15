@@ -41,7 +41,7 @@
         // --- LARAVEL ECHO CONFIG ---
         window.Echo = new Echo({
             broadcaster: 'reverb',
-            key: '{{ config("broadcasting.connections.reverb.key") }}',
+            key: 'xadx2yzktngfhlyk82rb',
             wsHost: 'jamctagoloan-backend-noqvsxwn.on-forge.com',
             wsPort: 443,
             wssPort: 443,
