@@ -44,11 +44,21 @@
             broadcaster: 'reverb',
             key: 'xadx2yzktngfhlyk82rb',
             wsHost: 'jamctagoloan-backend-noqvsxwn.on-forge.com',
-            wsPort: 443, // HTTPS port
-            wssPort: 443, // HTTPS port
+            wsPort: 443,
+            wssPort: 443,
             forceTLS: true,
             enabledTransports: ['ws', 'wss'],
             disableStats: true,
+        });
+
+        window.Echo.connector.pusher.connection.bind('connected', () => {
+            console.log("SUCCESS: Connected to Reverb!");
+            document.getElementById('status').textContent = "CONNECTED TO SERVER";
+        });
+
+        window.Echo.connector.pusher.connection.bind('error', (err) => {
+            console.error("WSS Error:", err);
+            document.getElementById('status').textContent = "CONNECTION ERROR";
         });
 
         window.Echo.connector.pusher.connection.bind('connected', () => {
