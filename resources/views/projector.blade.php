@@ -39,40 +39,56 @@
         }
 
         // --- ECHO CONFIGURATION WITH FALLBACKS ---
-        // Kon naay error sa Blade config, gamita ang default values
-        window.Echo = new Echo({
-            broadcaster: 'reverb',
-            key: 'xadx2yzktngfhlyk82rb',
-            wsHost: 'jamctagoloan-backend-noqvsxwn.on-forge.com',
-            wsPort: 443,
-            wssPort: 443,
-            forceTLS: true,
-            enabledTransports: ['wss', 'ws'],
-        });
+        // Try WebSocket first, but fall back to polling if it fails.
+        var _echoConnected = false;
+        var _pollingStarted = false;
 
-        window.Echo.connector.pusher.connection.bind('connected', () => {
-            console.log("SUCCESS: Connected to Reverb!");
-            document.getElementById('status').textContent = "CONNECTED TO SERVER";
-        });
+        function startPolling() {
+            if (_pollingStarted) return;
+            _pollingStarted = true;
+            statusEl.textContent = "POLLING (fallback)";
+            // initial
+            fetch('/obs-latest').then(function(r){ return r.json(); }).then(function(d){ applyData(d); });
+            setInterval(function(){
+                fetch('/obs-latest').then(function(r){ return r.json(); }).then(function(d){ applyData(d); });
+            }, 1000);
+        }
 
-        window.Echo.connector.pusher.connection.bind('error', (err) => {
-            console.error("WSS Error:", err);
-            document.getElementById('status').textContent = "CONNECTION ERROR";
-        });
+        try {
+            window.Echo = new Echo({
+                broadcaster: 'reverb',
+                key: 'xadx2yzktngfhlyk82rb',
+                wsHost: 'jamctagoloan-backend-noqvsxwn.on-forge.com',
+                wsPort: 443,
+                wssPort: 443,
+                forceTLS: true,
+                enabledTransports: ['wss', 'ws'],
+            });
 
-        window.Echo.connector.pusher.connection.bind('connected', () => {
-            statusEl.textContent = "CONNECTED TO SERVER";
-        });
+            // Connected
+            window.Echo.connector.pusher.connection.bind('connected', () => {
+                _echoConnected = true;
+                statusEl.textContent = "CONNECTED (websocket)";
+            });
 
-        window.Echo.connector.pusher.connection.bind('error', (err) => {
-            statusEl.textContent = "CONNECTION ERROR: " + (err.type || 'unknown');
-        });
+            // Error -> fallback to polling
+            window.Echo.connector.pusher.connection.bind('error', (err) => {
+                console.error("WSS Error:", err);
+                if (!_echoConnected) startPolling();
+                else statusEl.textContent = "CONNECTION ERROR";
+            });
 
-        // Pag-paminaw sa Live Update
-        window.Echo.channel('lyrics-channel')
-            .listen('LyricsUpdated', (e) => {
+            // Safety timeout: if not connected quickly, start polling
+            setTimeout(function(){ if (!_echoConnected) startPolling(); }, 2000);
+
+            // Listen for events when Echo works
+            window.Echo.channel('lyrics-channel').listen('LyricsUpdated', (e) => {
                 applyData(e.data);
             });
+        } catch (ex) {
+            console.error('Echo init failed', ex);
+            startPolling();
+        }
     </script>
 </body>
 </html>
