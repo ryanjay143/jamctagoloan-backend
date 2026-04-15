@@ -12,7 +12,9 @@ return Application::configure(basePath: dirname(__DIR__))
         health: '/up',
     )
     ->withMiddleware(function (Middleware $middleware) {
-        //
+         $middleware->validateCsrfTokens(except: [
+        'obs/update' // I-allow ang update gikan sa gawas
+    ]);
     })
     ->withExceptions(function (Exceptions $exceptions) {
         //
