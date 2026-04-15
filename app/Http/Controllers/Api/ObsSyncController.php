@@ -7,20 +7,15 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Cache;
 use Symfony\Component\HttpFoundation\StreamedResponse;
 
+
 class ObsSyncController extends Controller
 {
     public function update(Request $request)
-    {
-        $data = [
-            'text' => $request->text ?? '',
-            'fontSize' => $request->fontSize ?? 60,
-            'background' => $request->background ?? 'none',
-            'updatedAt' => now()->timestamp * 1000,
-        ];
-
-        Cache::put('obs_live_data', $data, 1440); 
-        return response()->json(['ok' => true]);
-    }
+{
+    $data = $request->all();
+    event(new \App\Events\LyricsUpdated($data));
+    return response()->json(['ok' => true]);
+}
 
     public function latest()
     {

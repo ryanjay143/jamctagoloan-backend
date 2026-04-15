@@ -2,87 +2,58 @@
 <html lang="en">
 <head>
     <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>JAMC Live Output</title>
+    
+    <!-- I-import ang Echo ug Pusher pinaagi sa CDN -->
+    <script src="https://cdn.jsdelivr.net/npm/pusher-js@8.4.0-rc2/dist/web/pusher.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/laravel-echo@1.16.1/dist/echo.iife.js"></script>
+
     <style>
-        html, body { 
-            height: 100vh; width: 100vw; margin: 0; padding: 0; 
-            overflow: hidden; background-color: #000000; 
-            transition: background-color 0.6s ease;
-            font-family: Arial, sans-serif; 
-        }
-        .center-container { 
-            height: 100%; width: 100%; display: flex; 
-            align-items: center; justify-content: center; 
-            padding: 50px; box-sizing: border-box;
-        }
+        /* CSS design gikan sa una */
+        html, body { height: 100vh; width: 100vw; margin: 0; overflow: hidden; background-color: #000; }
+        .center-container { height: 100%; display: flex; align-items: center; justify-content: center; padding: 50px; }
         h1 { 
-            color: white; text-align: center; text-transform: uppercase; 
-            white-space: pre-wrap; font-weight: 900; opacity: 0; 
-            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); 
-            transform: scale(0.98);
-            /* Baga nga Outline para sa OBS */
-            text-shadow: 
-                -4px -4px 0 #000, 4px -4px 0 #000, -4px 4px 0 #000, 4px 4px 0 #000, 
-                0px 6px 20px rgba(0,0,0,1);
+            color: white; text-align: center; text-transform: uppercase; white-space: pre-wrap; 
+            font-weight: 900; opacity: 0; transition: all 0.2s ease; /* duration-0.2s para paspas */
+            text-shadow: 0 5px 20px rgba(0,0,0,1);
         }
-        h1.visible { opacity: 1; transform: scale(1); }
+        h1.visible { opacity: 1; }
     </style>
 </head>
 <body>
-    <div class="center-container">
-        <h1 id="lyrics">JAMC SYSTEM CONNECTED</h1>
-    </div>
+    <div class="center-container"><h1 id="lyrics"></h1></div>
 
     <script>
         var lyricsEl = document.getElementById('lyrics');
 
-        function applyData(parsed) {
-            if (!parsed) return;
-
-            // Background Control
-            var bg = parsed.background || 'none';
-            if (bg === 'green') document.body.style.backgroundColor = '#00FF00';
-            else if (bg === 'praise') document.body.style.backgroundColor = '#1e1b4b';
-            else if (bg === 'worship') document.body.style.backgroundColor = '#09090b';
-            else document.body.style.backgroundColor = '#000000';
-
-            // Text & Size
-            lyricsEl.style.fontSize = (parsed.fontSize || 90) + 'px';
-            
-            if (parsed.text && parsed.text.trim() !== "") {
-                if(lyricsEl.textContent !== parsed.text) {
-                    lyricsEl.classList.remove('visible');
-                    setTimeout(() => {
-                        lyricsEl.textContent = parsed.text;
-                        lyricsEl.classList.add('visible');
-                    }, 300);
-                }
+        // Initial Logic
+        function applyData(data) {
+            if (!data) return;
+            lyricsEl.style.fontSize = (data.fontSize || 60) + 'px';
+            if (data.text && data.text.trim() !== "") {
+                lyricsEl.textContent = data.text;
+                lyricsEl.classList.add('visible');
             } else {
                 lyricsEl.classList.remove('visible');
             }
         }
 
-        // --- SSE (Server Sent Events) para Instant Sync ---
-        function connectSSE() {
-            var es = new EventSource('/obs-stream');
-            
-            es.onmessage = function(ev) {
-                try {
-                    applyData(JSON.parse(ev.data));
-                } catch(e) {}
-            };
+        // --- LARAVEL ECHO CONFIG ---
+        window.Echo = new Echo({
+            broadcaster: 'reverb',
+            key: '{{ config("broadcasting.connections.reverb.key") }}',
+            wsHost: 'jamctagoloan-backend-noqvsxwn.on-forge.com',
+            wsPort: 443,
+            wssPort: 443,
+            forceTLS: true,
+            enabledTransports: ['ws', 'wss']
+        });
 
-            es.onerror = function() {
-                es.close();
-                setTimeout(connectSSE, 2000); // Reconnect if disconnected
-            };
-        }
-
-        connectSSE();
-
-        // Initial Load
-        fetch('/obs-latest').then(r => r.json()).then(d => applyData(d));
+        // Pag-paminaw sa Live Update
+        window.Echo.channel('lyrics-channel')
+            .listen('LyricsUpdated', (e) => {
+                applyData(e.data);
+            });
     </script>
 </body>
 </html>
