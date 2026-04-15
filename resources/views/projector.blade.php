@@ -38,18 +38,22 @@
             }
         }
 
-        // --- ECHO CONFIGURATION ---
-        // Kon ang Blade variable dili mo-work, i-hardcode ang app key gikan sa .env
-       window.Echo = new Echo({
-    broadcaster: 'reverb',
-    key: 'xadx2yzktngfhlyk82rb', // Hardcoded key para sigurado
-    wsHost: 'jamctagoloan-backend-noqvsxwn.on-forge.com', // Imong Domain
-    wsPort: 443,
-    wssPort: 443,
-    forceTLS: true,
-    enabledTransports: ['ws', 'wss'],
-    disableStats: true,
-});
+                // --- ECHO CONFIGURATION ---
+                // Use the current page host and protocol so client connects to the correct origin.
+                (function() {
+                    const isSecure = location.protocol === 'https:';
+
+                    window.Echo = new Echo({
+                        broadcaster: 'reverb',
+                        key: '{{ env("REVERB_APP_KEY") }}',
+                        wsHost: window.location.hostname,
+                        wsPort: isSecure ? 443 : 80,
+                        wssPort: isSecure ? 443 : 80,
+                        forceTLS: isSecure,
+                        enabledTransports: isSecure ? ['wss'] : ['ws'],
+                        disableStats: true,
+                    });
+                })();
 
         window.Echo.connector.pusher.connection.bind('connected', () => {
             statusEl.textContent = "CONNECTED TO SERVER";
