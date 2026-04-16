@@ -80,17 +80,15 @@
         }
 
        window.Echo = new Echo({
-            broadcaster: 'reverb',
-            key: '{{ env("REVERB_APP_KEY", "xadx2yzktngfhlyk82rb") }}',
-            // KON LIVE (Forge): Gamita ang domain. KON LOCAL: Gamita ang localhost/127.0.0.1
-            wsHost: window.location.hostname, 
-            // KON LIVE (Forge): 443 (SSL). KON LOCAL: 8081
-            wsPort: (window.location.protocol === 'https:') ? 443 : 8081,
-            wssPort: (window.location.protocol === 'https:') ? 443 : 8081,
-            forceTLS: (window.location.protocol === 'https:'),
-            enabledTransports: ['ws', 'wss'],
-            disableStats: true,
-        });
+    broadcaster: 'reverb',
+    key: 'xadx2yzktngfhlyk82rb',
+    wsHost: 'jamctagoloan-backend-noqvsxwn.on-forge.com',
+    wsPort: 443,      // SSL port
+    wssPort: 443,     // SSL port
+    forceTLS: true,   // Importante ni para sa WSS
+    enabledTransports: ['ws', 'wss'],
+    disableStats: true,
+});
 
         window.Echo.channel('lyrics-channel')
             .listen('.lyrics.updated', (e) => {
