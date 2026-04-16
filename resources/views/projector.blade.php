@@ -79,7 +79,7 @@
             }
         }
 
-       window.Echo = new Echo({
+      window.Echo = new Echo({
     broadcaster: 'reverb',
     key: 'xadx2yzktngfhlyk82rb',
 
@@ -89,16 +89,20 @@
     wssPort: 443,
 
     forceTLS: true,
-    enabledTransports: ['wss'], // ✅ ONLY wss in production
+    enabledTransports: ['wss'],
 
     disableStats: true,
 });
 
-        window.Echo.channel('lyrics-channel')
-            .listen('.lyrics.updated', (e) => {
-                statusEl.textContent = "SYNCED";
-                applyData(e); // Data gikan sa event
-            });
+       window.Echo.channel('lyrics-channel')
+    .listen('.lyrics.updated', (e) => {
+        console.log(e);
+
+        // OBS overlay update
+        setLyrics(e.text);
+        setFontSize(e.fontSize);
+        setBackground(e.background);
+    });
     </script>
 </body>
 </html>
