@@ -82,11 +82,15 @@
        window.Echo = new Echo({
     broadcaster: 'reverb',
     key: 'xadx2yzktngfhlyk82rb',
+
     wsHost: 'jamctagoloan-backend-noqvsxwn.on-forge.com',
-    wsPort: 443,      // SSL port
-    wssPort: 443,     // SSL port
-    forceTLS: true,   // Importante ni para sa WSS
-    enabledTransports: ['ws', 'wss'],
+
+    wsPort: 443,
+    wssPort: 443,
+
+    forceTLS: true,
+    enabledTransports: ['wss'], // ✅ ONLY wss in production
+
     disableStats: true,
 });
 
