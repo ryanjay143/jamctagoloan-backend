@@ -5,7 +5,7 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Cache;
-use App\Events\LyricsUpdated;
+use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class ObsSyncController extends Controller
 {
@@ -18,27 +18,55 @@ class ObsSyncController extends Controller
             'updatedAt' => now()->timestamp * 1000,
         ];
 
-        // I-save gihapon sa Cache para sa initial load (fetch)
+        // I-save ang data
         Cache::put('obs_live_data', $data, 1440);
 
-        // I-dispatch ang Event (Kini ang mo-trigger sa Reverb/Pusher)
-        // Gikuha nato ang ->toOthers() para sigurado mo-send sa tanan!
-        event(new LyricsUpdated($data));
-
-        return response()->json([
-            'ok' => true,
-            'data' => $data
-        ]);
+        return response()->json(['ok' => true]);
     }
 
     public function latest()
     {
-        return response()->json(
-            Cache::get('obs_live_data', [
-                'text' => '',
-                'fontSize' => 60,
-                'background' => 'none'
-            ])
-        );
+        return response()->json(Cache::get('obs_live_data', [
+            'text' => '', 'fontSize' => 60, 'background' => 'none'
+        ]));
+    }
+
+    public function stream()
+    {
+        // Walay time limit, aron magsige og stream
+        set_time_limit(0);
+        
+        // Paspasan ang pag-send sa data
+        if (function_exists('ob_implicit_flush')) {
+            ob_implicit_flush(1);
+        }
+
+        return new StreamedResponse(function () {
+            $lastId = null;
+
+            while (true) {
+                if (connection_aborted()) break;
+
+                $data = Cache::get('obs_live_data');
+                $currentId = $data['updatedAt'] ?? null;
+
+                if ($currentId !== $lastId && $data) {
+                    echo "data: " . json_encode($data) . "\n\n";
+                    $lastId = $currentId;
+                    
+                    // Puwersahon ang PHP nga i-send dayon sa browser
+                    if (ob_get_level() > 0) ob_flush();
+                    flush();
+                }
+
+                // Gamay nga interval para dili mag-lag ang server (0.1 seconds delay = INSTANT reaction)
+                usleep(100000); 
+            }
+        }, 200, [
+            'Content-Type' => 'text/event-stream',
+            'Cache-Control' => 'no-cache',
+            'Connection' => 'keep-alive',
+            'X-Accel-Buffering' => 'no', // Disable Nginx buffer para instant sa Forge
+        ]);
     }
 }
