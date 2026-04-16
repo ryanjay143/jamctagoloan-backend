@@ -41,7 +41,7 @@
         // --- INSTANT SSE CONNECTION (Walay WSS Errors!) ---
         function connectSSE() {
             // I-siguro nga naa sa api.php o web.php ang imong route
-            var es = new EventSource('/obs-stream'); 
+            var es = new EventSource('obs-stream'); 
             
             es.onmessage = function(ev) {
                 applyData(JSON.parse(ev.data));
@@ -58,7 +58,7 @@
         connectSSE();
 
         // Initial Load
-        fetch('/obs-latest')
+        fetch('obs-latest')
             .then(res => res.json())
             .then(data => { if (data && data.text) applyData(data); })
             .catch(err => console.log("Initial load standby"));
