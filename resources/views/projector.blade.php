@@ -41,7 +41,7 @@
         // --- INSTANT SSE CONNECTION (Walay WSS Errors!) ---
         function connectSSE() {
             // I-siguro nga naa sa api.php o web.php ang imong route
-            var es = new EventSource('obs-stream'); 
+            var es = new EventSource('/obs-stream'); 
             
             es.onmessage = function(ev) {
                 applyData(JSON.parse(ev.data));
