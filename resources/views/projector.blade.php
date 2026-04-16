@@ -58,7 +58,7 @@
         connectSSE();
 
         // Initial Load
-        fetch('/obs/latest')
+        fetch('/obs-latest')
             .then(res => res.json())
             .then(data => { if (data && data.text) applyData(data); })
             .catch(err => console.log("Initial load standby"));
