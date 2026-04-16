@@ -18,9 +18,12 @@ class ObsSyncController extends Controller
             'updatedAt' => now()->timestamp * 1000,
         ];
 
+        // I-save gihapon sa Cache para sa initial load (fetch)
         Cache::put('obs_live_data', $data, 1440);
 
-        broadcast(new LyricsUpdated($data))->toOthers();
+        // I-dispatch ang Event (Kini ang mo-trigger sa Reverb/Pusher)
+        // Gikuha nato ang ->toOthers() para sigurado mo-send sa tanan!
+        event(new LyricsUpdated($data));
 
         return response()->json([
             'ok' => true,
