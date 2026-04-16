@@ -4,12 +4,11 @@ namespace App\Events;
 
 use Illuminate\Broadcasting\Channel;
 use Illuminate\Broadcasting\InteractsWithSockets;
-use Illuminate\Contracts\Broadcasting\ShouldBroadcast; // Importante ni
+use Illuminate\Contracts\Broadcasting\ShouldBroadcastNow; // Use NOW for instant broadcast
 use Illuminate\Foundation\Events\Dispatchable;
 use Illuminate\Queue\SerializesModels;
 
-// I-implement ang ShouldBroadcast aron ma-broadcast ni sa Laravel
-class LyricsUpdated implements ShouldBroadcast
+class LyricsUpdated implements ShouldBroadcastNow
 {
     use Dispatchable, InteractsWithSockets, SerializesModels;
 
@@ -24,7 +23,7 @@ class LyricsUpdated implements ShouldBroadcast
     }
 
     /**
-     * Get the channels the event should broadcast on.
+     * Broadcast channel
      */
     public function broadcastOn(): Channel
     {
@@ -32,10 +31,23 @@ class LyricsUpdated implements ShouldBroadcast
     }
 
     /**
-     * Optional: I-customize ang broadcast name
+     * Custom event name (frontend will listen to this)
      */
     public function broadcastAs(): string
     {
-        return 'LyricsUpdated';
+        return 'lyrics.updated';
+    }
+
+    /**
+     * Control the exact data sent to frontend
+     */
+    public function broadcastWith(): array
+    {
+        return [
+            'text' => $this->data['text'] ?? '',
+            'fontSize' => $this->data['fontSize'] ?? 60,
+            'background' => $this->data['background'] ?? 'none',
+            'updatedAt' => $this->data['updatedAt'] ?? null,
+        ];
     }
 }
