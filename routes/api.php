@@ -7,7 +7,7 @@ use App\Http\Controllers\EditMemberController;
 use App\Http\Controllers\TithesController;
 use App\Http\Controllers\Api\PlaylistController;
 use App\Http\Controllers\Api\ObsSyncController; // Siguroa nga naa kini nga import
-use App\Http\Controllers\ObsStateController;
+use App\Http\Controllers\Api\ObsStateController;
 
 Route::middleware('auth:sanctum')->get('/user', function (Request $request) {
     return $request->user();

@@ -8,22 +8,28 @@ use Illuminate\Support\Facades\Cache;
 
 class ObsStateController extends Controller
 {
+    private $file;
+
+    public function __construct()
+    {
+        $this->file = storage_path('app/obs_state.json');
+    }
+
     public function show()
     {
-        $state = Cache::get('obs_state', [
-            'text' => '',
-            'fontSize' => 60,
-            'background' => 'none',
-            'updatedAt' => 0,
-        ]);
-        return response()->json($state);
+        if (file_exists($this->file)) {
+            return response()->json(json_decode(file_get_contents($this->file), true));
+        }
+        return response()->json(['text' => '', 'fontSize' => 60, 'background' => 'none', 'updatedAt' => 0]);
     }
 
     public function update(Request $request)
     {
-        $current = Cache::get('obs_state', []);
+        $current = file_exists($this->file) 
+            ? json_decode(file_get_contents($this->file), true) ?? [] 
+            : [];
         $merged = array_merge($current, $request->all());
-        Cache::forever('obs_state', $merged);
+        file_put_contents($this->file, json_encode($merged));
         return response()->json(['ok' => true]);
     }
 }
