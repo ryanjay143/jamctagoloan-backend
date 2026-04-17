@@ -59,11 +59,21 @@
       if (data.background !== undefined) applyBg(data.background);
     }
 
-    fetch('/api/obs-state').then(r => r.json()).then(applyState).catch(() => {});
+    let lastUpdatedAt = null;
+    async function sync() {
+      try {
+        const res = await fetch('/api/obs-state');
+        if (!res.ok) return;
+        const data = await res.json();
+        if (data.updatedAt !== lastUpdatedAt) {
+          lastUpdatedAt = data.updatedAt;
+          applyState(data);
+        }
+      } catch {}
+    }
 
-    const es = new EventSource('/api/obs-stream');
-    es.onmessage = e => { try { applyState(JSON.parse(e.data)); } catch {} };
-    es.onerror = () => { es.close(); setInterval(() => fetch('/api/obs-state').then(r => r.json()).then(applyState).catch(() => {}), 300); };
+    sync();
+    setInterval(sync, 100);
   </script>
 </body>
 </html>
