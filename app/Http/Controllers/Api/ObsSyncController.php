@@ -10,23 +10,21 @@ use Symfony\Component\HttpFoundation\StreamedResponse;
 class ObsSyncController extends Controller
 {
     public function update(Request $request)
-    {
-        $data = [
-            'text' => $request->text ?? '',
-            'fontSize' => $request->fontSize ?? 60,
-            'background' => $request->background ?? 'none',
-            'updatedAt' => now()->timestamp * 1000,
-        ];
+{
+    $data = [
+        'text' => $request->text ?? '',
+        'fontSize' => $request->fontSize ?? 60,
+        'background' => $request->background ?? 'none',
+        'updatedAt' => now()->timestamp * 1000, // Milliseconds para sa JS
+    ];
 
-        // 1. I-save sa Cache (para sa initial load)
-        Cache::put('obs_live_data', $data, 1440);
+    Cache::put('obs_live_data', $data, 1440);
 
-        // 2. 🔥 KINI ANG IMPORTANTE: I-broadcast ang event sa Reverb!
-        // Gamita ang ShouldBroadcastNow para dili na moagi sa Queue (instant)
-        broadcast(new \App\Events\LyricsUpdated($data))->toOthers();
+    // 🔥 KINI ANG MU-TRIGGER SA REVERB DAYON
+    broadcast(new \App\Events\LyricsUpdated($data))->toOthers();
 
-        return response()->json(['ok' => true]);
-    }
+    return response()->json(['ok' => true]);
+}
 
     public function latest()
     {

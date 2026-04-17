@@ -10,6 +10,7 @@
             height: 100vh; 
             width: 100vw; 
             margin: 0; 
+            padding: 0;
             overflow: hidden; 
             background-color: #000; 
             transition: background-color 0.8s ease; 
@@ -21,7 +22,7 @@
             display: flex; 
             align-items: center; 
             justify-content: center; 
-            padding: 60px; 
+            padding: 50px; 
             box-sizing: border-box; 
         }
 
@@ -31,14 +32,20 @@
             text-transform: uppercase; 
             white-space: pre-wrap; 
             font-weight: 700; 
+            margin: 0;
             opacity: 0; 
-            transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1); 
-            transform: scale(0.98); 
-            /* High-contrast shadow para mabasa bisag unsay background */
-            text-shadow: -3px -3px 0 #000, 3px -3px 0 #000, -3px 3px 0 #000, 3px 3px 0 #000, 
-                         -4px 0px 0 #000, 4px 0px 0 #000, 0px -4px 0 #000, 0px 4px 0 #000, 
-                         0px 10px 30px rgba(0,0,0,0.8), 0px 20px 60px rgba(0,0,0,0.6); 
-            letter-spacing: 2px; 
+            /* Smooth scaling and fade transition */
+            transition: opacity 0.3s ease, transform 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+            transform: scale(0.95); 
+            
+            /* High-definition shadows para sa readability sa live video */
+            text-shadow: 
+                0px 0px 10px rgba(0,0,0,0.9),
+                -2px -2px 0 #000, 2px -2px 0 #000, 
+                -2px 2px 0 #000, 2px 2px 0 #000,
+                0px 5px 20px rgba(0,0,0,1);
+            
+            letter-spacing: 1px; 
             line-height: 1.1; 
         }
 
@@ -51,8 +58,8 @@
             position: fixed; 
             bottom: 10px; 
             left: 10px; 
-            color: rgba(255,255,255,0.3); 
-            font-size: 10px; 
+            color: rgba(255,255,255,0.2); 
+            font-size: 9px; 
             font-family: monospace; 
             z-index: 50; 
             text-transform: uppercase;
@@ -65,84 +72,113 @@
         <h1 id="lyrics"></h1>
     </div>
 
-    <!-- 1. I-load ang gikinahanglan nga libraries (Pusher/Echo) -->
+    <!-- 1. Libraries -->
     <script src="https://cdn.jsdelivr.net/npm/pusher-js@8.3.0/dist/web/pusher.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/laravel-echo@1.15.3/dist/echo.iife.js"></script>
 
     <script>
-        var lyricsEl = document.getElementById('lyrics');
-        var statusEl = document.getElementById('status');
+        const lyricsEl = document.getElementById('lyrics');
+        const statusEl = document.getElementById('status');
+        let lastTimestamp = 0;
 
-        // Function para i-apply ang kausaban sa screen
         function applyData(data) {
             if (!data) return;
 
-            // Background Logic
-            var bg = data.background || 'none';
-            if (bg === 'green') document.body.style.backgroundColor = '#00FF00';
-            else if (bg === 'praise') document.body.style.backgroundColor = '#1e1b4b';
-            else if (bg === 'worship') document.body.style.backgroundColor = '#09090b';
-            else document.body.style.backgroundColor = '#000000';
+            // Ayaw i-process kung karaan na ang data (base sa updatedAt timestamp)
+            if (data.updatedAt && data.updatedAt < lastTimestamp) return;
+            lastTimestamp = data.updatedAt || Date.now();
 
-            // Font Size Logic
+            // Background Color Logic
+            const bg = data.background || 'none';
+            const colors = {
+                'green': '#00FF00',
+                'praise': '#1e1b4b',
+                'worship': '#09090b',
+                'black': '#000000'
+            };
+            document.body.style.backgroundColor = colors[bg] || '#000000';
+
+            // Font Size
             lyricsEl.style.fontSize = (data.fontSize || 90) + 'px';
             
-            // Text Update Logic
+            // Text Update with Animation
             if (data.text && data.text.trim() !== "") {
-                lyricsEl.textContent = data.text;
-                lyricsEl.classList.add('visible');
+                if (lyricsEl.textContent !== data.text) {
+                    lyricsEl.classList.remove('visible'); // Quick fade out
+                    setTimeout(() => {
+                        lyricsEl.textContent = data.text;
+                        lyricsEl.classList.add('visible'); // Fade in with new text
+                    }, 150);
+                } else {
+                    lyricsEl.classList.add('visible');
+                }
             } else {
                 lyricsEl.classList.remove('visible');
-                // Optional: Limpyohan ang text human sa transition out
-                setTimeout(() => { 
-                    if(!lyricsEl.classList.contains('visible')) lyricsEl.textContent = ""; 
-                }, 300);
             }
         }
 
-        // --- REVERB (WEBSOCKET) SETUP ---
+        // --- REVERB CONFIG ---
         window.Pusher = Pusher;
         window.Echo = new Echo({
             broadcaster: 'reverb',
             key: 'xadx2yzktngfhlyk82rb',
             wsHost: window.location.hostname,
-            wsPort: 443, // Para sa Forge (SSL)
+            wsPort: 443,
             wssPort: 443,
             forceTLS: true,
             enabledTransports: ['ws', 'wss'],
             disableStats: true
         });
 
-        // Monitor ang Connection Status
-        window.Echo.connector.pusher.connection.bind('connected', () => {
-            statusEl.textContent = "CONNECTED (REVERB)";
-        });
+        // --- STABLE CONNECTION MONITORING ---
+        function initConnectionStatus() {
+            if (window.Echo && window.Echo.connector && window.Echo.connector.pusher) {
+                const pusher = window.Echo.connector.pusher;
+                
+                pusher.connection.bind('connected', () => {
+                    statusEl.textContent = "LIVE: REVERB CONNECTED";
+                    statusEl.style.color = "rgba(0, 255, 0, 0.5)";
+                });
 
-        window.Echo.connector.pusher.connection.bind('disconnected', () => {
-            statusEl.textContent = "DISCONNECTED";
-        });
+                pusher.connection.bind('disconnected', () => {
+                    statusEl.textContent = "OFFLINE: RECONNECTING...";
+                    statusEl.style.color = "rgba(255, 0, 0, 0.5)";
+                });
 
-        // PAMINAW SA CHANNEL (ZERO DELAY)
-        window.Echo.channel('lyrics-channel')
-            .listen('.lyrics.updated', (data) => {
-                console.log("Live Update:", data);
-                applyData(data);
-            });
+                // Paminaw sa Channel
+                window.Echo.channel('lyrics-channel')
+                    .listen('.lyrics.updated', (data) => {
+                        console.log("WebSocket Received:", data);
+                        applyData(data);
+                    });
+            } else {
+                setTimeout(initConnectionStatus, 500);
+            }
+        }
 
-        // INITIAL LOAD (Inig abli sa OBS para dili blangko)
+        initConnectionStatus();
+
+        // --- INITIAL LOAD (Para dili blangko inig abli) ---
         function loadLatest() {
             fetch('/obs-latest')
                 .then(res => res.json())
-                .then(data => {
-                    if (data) applyData(data);
-                })
-                .catch(err => {
-                    statusEl.textContent = "RETRYING LOAD...";
+                .then(data => applyData(data))
+                .catch(() => {
+                    statusEl.textContent = "SYNC ERROR - RETRYING...";
                     setTimeout(loadLatest, 3000);
                 });
         }
 
         loadLatest();
+
+        // --- AUTO REFRESH PREVENTER ---
+        // OBS Browser sources sometimes sleep. This keeps it awake.
+        setInterval(() => {
+            if (statusEl.textContent.includes('OFFLINE')) {
+                loadLatest();
+            }
+        }, 10000);
+
     </script>
 </body>
 </html>
