@@ -40,7 +40,7 @@
 
         // --- INSTANT SSE CONNECTION (Walay WSS Errors!) ---
         function connectSSE() {
-            var eventSource = new EventSource('obs/stream'); // Ensure correct URL
+            var eventSource = new EventSource('/api/obs/stream'); // Ensure correct URL
 
             eventSource.onopen = function(event) {
                 statusEl.textContent = "CONNECTED (SSE)";
@@ -68,7 +68,7 @@
 
         // Initial Load
         function loadLatest() {
-            fetch('obs/latest') // Ensure correct URL
+            fetch('/api/obs/latest') // Ensure correct URL
                 .then(res => res.json())
                 .then(data => {
                     if (data && data.text) {
