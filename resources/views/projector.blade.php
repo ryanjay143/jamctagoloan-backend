@@ -40,7 +40,7 @@
 
         // --- INSTANT SSE CONNECTION (Walay WSS Errors!) ---
         function connectSSE() {
-            var es = new EventSource('obs/stream'); // Siguroa nga husto ang URL
+            var es = new EventSource('/obs/stream'); // Siguroa nga husto ang URL
             
             es.onopen = function() {
                 statusEl.textContent = "CONNECTED (SSE)";
@@ -68,7 +68,7 @@
 
         // Initial Load (Para sa pagsugod)
         function loadLatest() {
-            fetch('obs/latest') // Siguroa nga husto ang URL
+            fetch('/obs/latest') // Siguroa nga husto ang URL
                 .then(res => res.json())
                 .then(data => {
                     if (data && data.text) {
