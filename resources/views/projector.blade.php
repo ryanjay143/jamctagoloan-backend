@@ -1,75 +1,71 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="utf-8" />
-    <title>JAMC Live Output</title>
-    <style>
-        @import url('https://fonts.googleapis.com/css2?family=Oswald:wght@700&display=swap');
-        html, body { height: 100vh; width: 100vw; margin: 0; overflow: hidden; background-color: #000; font-family: 'Oswald', sans-serif; }
-        .center-container { height: 100%; display: flex; align-items: center; justify-content: center; padding: 60px; box-sizing: border-box; }
-        
-        h1 { 
-    color: #fff; 
-    text-align: center; 
-    text-transform: uppercase; 
-    font-weight: 700;
-    transition: opacity 0.05s ease-in, transform 0.05s ease-in;
-    margin: 0;
-    line-height: 1.1;
-    
-    /* 🔥 PABAGAON NATO ANG OUTLINE 🔥 */
-    /* Gidugangan ang pixels (gikan 3px-4px ngadto na 6px) */
-    text-shadow: 
-        -6px -6px 0 #000, 6px -6px 0 #000, 
-        -6px 6px 0 #000, 6px 6px 0 #000,
-        -6px 0px 0 #000, 6px 0px 0 #000,
-        0px -6px 0 #000, 0px 6px 0 #000,
-        -5px -5px 0 #000, 5px -5px 0 #000, 
-        -5px 5px 0 #000, 5px 5px 0 #000,
-        0px 10px 30px rgba(0,0,0,0.8);
-}
-        .visible { opacity: 1 !important; }
-    </style>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Projector</title>
+  <link href="https://fonts.googleapis.com/css2?family=Oswald:wght@400;700&display=swap" rel="stylesheet" />
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      width: 1920px; height: 1080px; overflow: hidden;
+      background: #000;
+      font-family: 'Oswald', sans-serif;
+      display: flex; align-items: center; justify-content: center;
+    }
+    #lyrics {
+      color: #fff;
+      text-align: center;
+      font-weight: 700;
+      text-transform: uppercase;
+      line-height: 1.1;
+      padding: 20px;
+      white-space: pre-wrap;
+      text-shadow:
+        -6px -6px 0 #000, 6px -6px 0 #000,
+        -6px  6px 0 #000, 6px  6px 0 #000,
+        -6px  0px 0 #000, 6px  0px 0 #000,
+         0px -6px 0 #000, 0px  6px 0 #000,
+        -5px -5px 0 #000, 5px -5px 0 #000,
+        -5px  5px 0 #000, 5px  5px 0 #000,
+         0px 10px 30px rgba(0,0,0,0.8);
+    }
+  </style>
 </head>
 <body>
-    <div class="center-container">
-        <h1 id="lyrics" style="opacity: 0;"></h1>
-    </div>
+  <div id="lyrics" style="font-size: 90px;"></div>
+  <script>
+    const el = document.getElementById('lyrics');
+    const body = document.body;
 
-    <script>
-        var lyricsEl = document.getElementById('lyrics');
+    function applyBg(bg) {
+      body.style.backgroundImage = '';
+      if (bg === 'praise') body.style.backgroundImage = 'linear-gradient(to bottom right, #4f46e5, #7c3aed, #4f46e5)';
+      else if (bg === 'worship') body.style.backgroundImage = 'linear-gradient(to top, #000000, #171717, #000000)';
+      else if (bg === 'green') body.style.backgroundColor = '#00FF00';
+      else if (bg && bg.startsWith('#')) body.style.backgroundColor = bg;
+      else body.style.backgroundColor = '#000';
+    }
 
-        function applyData(data) {
-            if (!data) return;
+    async function sync() {
+      try {
+        const res = await fetch('/api/obs-state');
+        if (!res.ok) return;
+        const data = await res.json();
+        if (data.text !== undefined) el.textContent = data.text;
+        if (data.fontSize) el.style.fontSize = data.fontSize + 'px';
+        if (data.fontFamily) el.style.fontFamily = data.fontFamily;
+        if (data.isBold !== undefined) el.style.fontWeight = data.isBold ? '700' : '400';
+        if (data.isUppercase !== undefined) el.style.textTransform = data.isUppercase ? 'uppercase' : 'none';
+        if (data.hasOutline !== undefined) el.style.textShadow = data.hasOutline
+          ? '-6px -6px 0 #000, 6px -6px 0 #000, -6px 6px 0 #000, 6px 6px 0 #000, 0px 10px 30px rgba(0,0,0,0.8)'
+          : 'none';
+        if (data.background !== undefined) applyBg(data.background);
+      } catch {}
+    }
 
-            // Instant Background Change
-            var bg = data.background;
-            document.body.style.backgroundColor = (bg === 'green') ? '#00FF00' : (bg === 'praise' ? '#1e1b4b' : (bg === 'worship' ? '#09090b' : '#000000'));
-            
-            lyricsEl.style.fontSize = (data.fontSize || 90) + 'px';
-            
-            // Instant Text Change
-            if (data.text && data.text.trim() !== '') {
-                lyricsEl.textContent = data.text;
-                lyricsEl.classList.add('visible');
-            } else {
-                lyricsEl.classList.remove('visible');
-            }
-        }
-
-        // Paspas nga koneksyon
-        function connect() {
-            var es = new EventSource('/obs-stream?t=' + Date.now());
-            es.onmessage = function (ev) { applyData(JSON.parse(ev.data)); };
-            es.onerror = function () { 
-                es.close(); 
-                setTimeout(connect, 1000); // Reconnect if disconnected
-            };
-        }
-        connect();
-        
-        // Initial load
-        fetch('/obs-latest').then(r => r.json()).then(applyData);
-    </script>
+    sync();
+    setInterval(sync, 300);
+  </script>
 </body>
 </html>
