@@ -7,6 +7,7 @@ use App\Http\Controllers\EditMemberController;
 use App\Http\Controllers\TithesController;
 use App\Http\Controllers\Api\PlaylistController;
 use App\Http\Controllers\Api\ObsSyncController; // Siguroa nga naa kini nga import
+use App\Http\Controllers\ObsStateController;
 
 Route::middleware('auth:sanctum')->get('/user', function (Request $request) {
     return $request->user();
@@ -22,3 +23,6 @@ Route::post('/playlists/sync', [PlaylistController::class, 'sync']);
 Route::post('/playlists/upload', [PlaylistController::class, 'upload']);
 // Move this to api.php kay gamiton sa backend
 // Route::post('/obs/update', [ObsSyncController::class, 'update']);
+
+Route::get('/obs-state', [ObsStateController::class, 'show']);
+Route::post('/obs-state', [ObsStateController::class, 'update']);
