@@ -1,3 +1,8 @@
+### Kompleto nga Gi-update nga HTML/Javascript para sa `projector`
+
+Ania ang kompleto ug husto nga code para sa imong `projector` view. I-copy ug i-paste kini aron masiguro nga husto ang tanan.
+
+```html
 <!doctype html>
 <html lang="en">
 <head>
@@ -38,48 +43,40 @@
             }
         }
 
-        // --- INSTANT SSE CONNECTION (Walay WSS Errors!) ---
+        // --- INSTANT SSE CONNECTION ---
         function connectSSE() {
-            var eventSource = new EventSource('obs/stream'); // Ensure correct URL
-
-            eventSource.onopen = function(event) {
+            // 🔥 SIGUROA NGA HUSTO ANG URL DINHI (DAPAT NAAY HYPHEN)
+            var es = new EventSource('/obs-stream'); 
+            
+            es.onopen = function() {
                 statusEl.textContent = "CONNECTED (SSE)";
             };
 
-            eventSource.onmessage = function(event) {
-                try {
-                    const data = JSON.parse(event.data);
-                    applyData(data);
-                } catch (error) {
-                    console.error("Error parsing SSE data:", error, event.data);
-                    statusEl.textContent = "SSE PARSE ERROR";
-                }
+            es.onmessage = function(ev) {
+                applyData(JSON.parse(ev.data));
             };
 
-            eventSource.onerror = function(event) {
-                console.error("SSE Error:", event);
+            es.onerror = function() {
                 statusEl.textContent = "RECONNECTING...";
-                eventSource.close();
-                setTimeout(connectSSE, 2000); // Auto-reconnect after 2 seconds
+                es.close();
+                setTimeout(connectSSE, 2000); // Auto reconnect kung maputol
             };
         }
 
         connectSSE();
 
-        // Initial Load
+        // --- INITIAL LOAD ---
         function loadLatest() {
-            fetch('obs/latest') // Ensure correct URL
+            // 🔥 SIGUROA NGA HUSTO PUD ANG URL DINHI
+            fetch('/obs-latest')
                 .then(res => res.json())
-                .then(data => {
-                    if (data && data.text) {
-                        applyData(data);
-                    }
-                })
+                .then(data => { if (data && data.text) applyData(data); })
                 .catch(err => {
-                    console.error("Initial load error:", err);
-                    statusEl.textContent = "INITIAL LOAD FAILED"; // Update status on error
+                    console.log("Initial load standby. Retrying...");
+                    setTimeout(loadLatest, 3000); // Sulayi pag-usab kung naay error
                 });
         }
+
         loadLatest();
     </script>
 </body>
