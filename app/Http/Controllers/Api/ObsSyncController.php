@@ -9,27 +9,34 @@ use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class ObsSyncController extends Controller
 {
-    public function update(Request $request)
-{
-    $data = [
-        'text' => $request->text ?? '',
-        'fontSize' => $request->fontSize ?? 60,
-        'background' => $request->background ?? 'none',
-        'updatedAt' => now()->timestamp * 1000, // Milliseconds para sa JS
-    ];
+     public function update(Request $request)
+    {
+        try {
+            $data = [
+                'text' => $request->text ?? '',
+                'fontSize' => $request->fontSize ?? 90,
+                'background' => $request->background ?? 'none',
+                'updatedAt' => now()->timestamp * 1000,
+            ];
 
-    Cache::put('obs_live_data', $data, 1440);
+            // 1. I-save sa Cache
+            Cache::put('obs_live_data', $data, 1440);
 
-    // 🔥 KINI ANG MU-TRIGGER SA REVERB DAYON
-    broadcast(new \App\Events\LyricsUpdated($data))->toOthers();
+            // 2. I-broadcast sa Reverb (Kini ang posibleng hinungdan sa 500 kung sayop ang config)
+            broadcast(new LyricsUpdated($data));
 
-    return response()->json(['ok' => true]);
-}
+            return response()->json(['ok' => true, 'message' => 'Updated successfully']);
+            
+        } catch (\Exception $e) {
+            // Kung naay error, i-report para makita nimo sa logs
+            return response()->json(['ok' => false, 'error' => $e->getMessage()], 500);
+        }
+    }
 
     public function latest()
     {
         return response()->json(Cache::get('obs_live_data', [
-            'text' => '', 'fontSize' => 60, 'background' => 'none'
+            'text' => '', 'fontSize' => 90, 'background' => 'none'
         ]));
     }
 

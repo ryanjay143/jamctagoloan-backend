@@ -14,7 +14,9 @@ return Application::configure(basePath: dirname(__DIR__))
     )
     ->withMiddleware(function (Middleware $middleware) {
          $middleware->validateCsrfTokens(except: [
-        'obs/update' // I-allow ang update gikan sa gawas
+        'obs/update', // I-allow ang update gikan sa gawas
+         '/update-lyrics', // I-exclude kini para maka-update ang imong controller
+        '/api/*'
     ]);
     })
     ->withExceptions(function (Exceptions $exceptions) {
