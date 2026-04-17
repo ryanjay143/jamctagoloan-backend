@@ -9,11 +9,20 @@
         .center-container { height: 100%; display: flex; align-items: center; justify-content: center; padding: 60px; box-sizing: border-box; }
         
         h1 { 
-            color: #fff; text-align: center; text-transform: uppercase; font-weight: 700;
-            /* Paspas nga transition */
+            color: #fff; 
+            text-align: center; 
+            text-transform: uppercase; 
+            font-weight: 700;
             transition: opacity 0.05s ease-in, transform 0.05s ease-in;
-            text-shadow: 0 10px 30px rgba(0,0,0,0.8);
             margin: 0;
+            line-height: 1.1;
+            /* 🔥 GIDUGANG NGA OUTLINE (THICK BORDER) 🔥 */
+            text-shadow: 
+                -3px -3px 0 #000, 3px -3px 0 #000, 
+                -3px 3px 0 #000, 3px 3px 0 #000,
+                -4px 0px 0 #000, 4px 0px 0 #000,
+                0px -4px 0 #000, 0px 4px 0 #000,
+                0px 10px 30px rgba(0,0,0,0.8);
         }
         .visible { opacity: 1 !important; }
     </style>
@@ -36,7 +45,7 @@
             lyricsEl.style.fontSize = (data.fontSize || 90) + 'px';
             
             // Instant Text Change
-            if (data.text.trim() !== '') {
+            if (data.text && data.text.trim() !== '') {
                 lyricsEl.textContent = data.text;
                 lyricsEl.classList.add('visible');
             } else {
@@ -45,8 +54,15 @@
         }
 
         // Paspas nga koneksyon
-        var es = new EventSource('/obs-stream?t=' + Date.now());
-        es.onmessage = function (ev) { applyData(JSON.parse(ev.data)); };
+        function connect() {
+            var es = new EventSource('/obs-stream?t=' + Date.now());
+            es.onmessage = function (ev) { applyData(JSON.parse(ev.data)); };
+            es.onerror = function () { 
+                es.close(); 
+                setTimeout(connect, 1000); // Reconnect if disconnected
+            };
+        }
+        connect();
         
         // Initial load
         fetch('/obs-latest').then(r => r.json()).then(applyData);
