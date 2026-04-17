@@ -4,7 +4,7 @@ namespace App\Events;
 
 use Illuminate\Broadcasting\Channel;
 use Illuminate\Broadcasting\InteractsWithSockets;
-use Illuminate\Contracts\Broadcasting\ShouldBroadcastNow;
+use Illuminate\Contracts\Broadcasting\ShouldBroadcastNow; // <--- DAPAT "Now"
 use Illuminate\Foundation\Events\Dispatchable;
 use Illuminate\Queue\SerializesModels;
 
@@ -27,10 +27,5 @@ class LyricsUpdated implements ShouldBroadcastNow
     public function broadcastAs(): string
     {
         return 'lyrics.updated';
-    }
-
-    public function broadcastWith(): array
-    {
-        return $this->data;
     }
 }
