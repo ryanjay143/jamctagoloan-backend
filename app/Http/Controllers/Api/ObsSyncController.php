@@ -41,21 +41,24 @@ class ObsSyncController extends Controller
         $response = new StreamedResponse(function () {
             $lastId = null;
 
-            while (true) {
-                if (connection_aborted()) break;
+        while (true) {
+            if (connection_aborted()) break;
 
-                $data = Cache::get('obs_live_data');
-                $currentId = $data['updatedAt'] ?? null;
+            $data = Cache::get('obs_live_data');
+            $currentId = $data['updatedAt'] ?? null;
 
-                if ($currentId !== $lastId && $data) {
-                    echo "data: " . json_encode($data) . "\n\n";
-                    $lastId = $currentId;
-                    if (ob_get_level() > 0) ob_flush();
-                    flush();
-                }
+            if ($currentId !== $lastId && $data) {
+                echo "data: " . json_encode($data) . "\n\n";
+                $lastId = $currentId;
                 
-                usleep(50000); // Gihimo nakong 50ms (mas paspas kaysa 100ms)
+                // Paspas nga flushing
+                if (ob_get_level() > 0) ob_flush();
+                flush();
             }
+
+            // 🔥 10ms poll interval (10,000 microseconds)
+            usleep(10000); 
+        }
         }, 200, [
             'Content-Type' => 'text/event-stream',
             'Cache-Control' => 'no-cache',
