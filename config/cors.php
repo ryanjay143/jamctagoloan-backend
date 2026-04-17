@@ -19,7 +19,10 @@ return [
 
     'allowed_methods' => ['*'],
 
-    'allowed_origins' => ['*'],
+    'allowed_origins' => [
+    'http://localhost:3000',                // Local React
+    'https://church-playlists.vercel.app',  // KINI ANG I-DUNGAG (Imong Vercel URL)
+],
 
     'allowed_origins_patterns' => [],
 
