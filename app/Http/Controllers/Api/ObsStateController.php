@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Http\Controllers;
+namespace App\Http\Controllers\Api;
 
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Cache;
@@ -15,7 +15,6 @@ class ObsStateController extends Controller
             'background' => 'none',
             'updatedAt' => 0,
         ]);
-
         return response()->json($state);
     }
 
@@ -24,7 +23,6 @@ class ObsStateController extends Controller
         $current = Cache::get('obs_state', []);
         $merged = array_merge($current, $request->all());
         Cache::forever('obs_state', $merged);
-
         return response()->json(['ok' => true]);
     }
 }
