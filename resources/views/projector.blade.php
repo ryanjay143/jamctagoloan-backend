@@ -9,21 +9,25 @@
         .center-container { height: 100%; display: flex; align-items: center; justify-content: center; padding: 60px; box-sizing: border-box; }
         
         h1 { 
-            color: #fff; 
-            text-align: center; 
-            text-transform: uppercase; 
-            font-weight: 700;
-            transition: opacity 0.05s ease-in, transform 0.05s ease-in;
-            margin: 0;
-            line-height: 1.1;
-            /* 🔥 GIDUGANG NGA OUTLINE (THICK BORDER) 🔥 */
-            text-shadow: 
-                -3px -3px 0 #000, 3px -3px 0 #000, 
-                -3px 3px 0 #000, 3px 3px 0 #000,
-                -4px 0px 0 #000, 4px 0px 0 #000,
-                0px -4px 0 #000, 0px 4px 0 #000,
-                0px 10px 30px rgba(0,0,0,0.8);
-        }
+    color: #fff; 
+    text-align: center; 
+    text-transform: uppercase; 
+    font-weight: 700;
+    transition: opacity 0.05s ease-in, transform 0.05s ease-in;
+    margin: 0;
+    line-height: 1.1;
+    
+    /* 🔥 PABAGAON NATO ANG OUTLINE 🔥 */
+    /* Gidugangan ang pixels (gikan 3px-4px ngadto na 6px) */
+    text-shadow: 
+        -6px -6px 0 #000, 6px -6px 0 #000, 
+        -6px 6px 0 #000, 6px 6px 0 #000,
+        -6px 0px 0 #000, 6px 0px 0 #000,
+        0px -6px 0 #000, 0px 6px 0 #000,
+        -5px -5px 0 #000, 5px -5px 0 #000, 
+        -5px 5px 0 #000, 5px 5px 0 #000,
+        0px 10px 30px rgba(0,0,0,0.8);
+}
         .visible { opacity: 1 !important; }
     </style>
 </head>

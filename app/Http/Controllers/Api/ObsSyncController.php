@@ -57,7 +57,7 @@ class ObsSyncController extends Controller
             }
 
             // 🔥 10ms poll interval (10,000 microseconds)
-            usleep(10000); 
+            // usleep(10000); 
         }
         }, 200, [
             'Content-Type' => 'text/event-stream',
