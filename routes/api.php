@@ -21,4 +21,4 @@ Route::get('/playlists', [PlaylistController::class, 'index']);
 Route::post('/playlists/sync', [PlaylistController::class, 'sync']);
 Route::post('/playlists/upload', [PlaylistController::class, 'upload']);
 // Move this to api.php kay gamiton sa backend
-Route::post('/obs/update', [ObsSyncController::class, 'update']);
+// Route::post('/obs/update', [ObsSyncController::class, 'update']);
