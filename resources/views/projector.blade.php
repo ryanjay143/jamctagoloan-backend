@@ -5,84 +5,38 @@
     <title>JAMC Live Output</title>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Oswald:wght@700&display=swap');
-
-        html, body {
-            height: 100vh;
-            width: 100vw;
+        html, body { height: 100vh; width: 100vw; margin: 0; overflow: hidden; background-color: #000; font-family: 'Oswald', sans-serif; }
+        .center-container { height: 100%; display: flex; align-items: center; justify-content: center; padding: 60px; box-sizing: border-box; }
+        
+        h1 { 
+            color: #fff; text-align: center; text-transform: uppercase; font-weight: 700;
+            /* Paspas nga transition */
+            transition: opacity 0.05s ease-in, transform 0.05s ease-in;
+            text-shadow: 0 10px 30px rgba(0,0,0,0.8);
             margin: 0;
-            overflow: hidden;
-            background-color: #000;
-            transition: background-color 0.8s ease;
-            font-family: 'Oswald', sans-serif;
         }
-
-        .center-container {
-            height: 100%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            padding: 60px;
-            box-sizing: border-box;
-        }
-
-        h1 {
-            color: #ffffff;
-            text-align: center;
-            text-transform: uppercase;
-            white-space: pre-wrap;
-            font-weight: 700;
-            opacity: 0;
-            transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
-            transform: scale(0.98);
-            text-shadow:
-                -3px -3px 0 #000,  3px -3px 0 #000,
-                -3px  3px 0 #000,  3px  3px 0 #000,
-                -4px  0px 0 #000,  4px  0px 0 #000,
-                 0px -4px 0 #000,  0px  4px 0 #000,
-                 0px 10px 30px rgba(0,0,0,0.8),
-                 0px 20px 60px rgba(0,0,0,0.6);
-            letter-spacing: 2px;
-            line-height: 1.1;
-        }
-
-        h1.visible {
-            opacity: 1;
-            transform: scale(1);
-        }
-
-        .debug-status {
-            position: fixed;
-            bottom: 10px;
-            left: 10px;
-            color: #555;
-            font-size: 10px;
-            font-family: monospace;
-            z-index: 50;
-        }
+        .visible { opacity: 1 !important; }
     </style>
 </head>
 <body>
-    <div id="status" class="debug-status">CONNECTING...</div>
     <div class="center-container">
-        <h1 id="lyrics"></h1>
+        <h1 id="lyrics" style="opacity: 0;"></h1>
     </div>
 
     <script>
         var lyricsEl = document.getElementById('lyrics');
-        var statusEl = document.getElementById('status');
 
         function applyData(data) {
             if (!data) return;
 
-            var bg = data.background || 'none';
-            if (bg === 'green')   document.body.style.backgroundColor = '#00FF00';
-            else if (bg === 'praise')  document.body.style.backgroundColor = '#1e1b4b';
-            else if (bg === 'worship') document.body.style.backgroundColor = '#09090b';
-            else                       document.body.style.backgroundColor = '#000000';
-
+            // Instant Background Change
+            var bg = data.background;
+            document.body.style.backgroundColor = (bg === 'green') ? '#00FF00' : (bg === 'praise' ? '#1e1b4b' : (bg === 'worship' ? '#09090b' : '#000000'));
+            
             lyricsEl.style.fontSize = (data.fontSize || 90) + 'px';
-
-            if (data.text && data.text.trim() !== '') {
+            
+            // Instant Text Change
+            if (data.text.trim() !== '') {
                 lyricsEl.textContent = data.text;
                 lyricsEl.classList.add('visible');
             } else {
@@ -90,46 +44,12 @@
             }
         }
 
-        // SSE connection with auto-reconnect
-        function connectSSE() {
-            // Adding ?t= param helps avoid HTTP/2 cached connections
-            var es = new EventSource('/obs-stream?t=' + Date.now());
-
-            es.onopen = function () {
-                statusEl.textContent = 'CONNECTED (SSE)';
-            };
-
-            es.onmessage = function (ev) {
-                try {
-                    applyData(JSON.parse(ev.data));
-                } catch (e) {
-                    console.error('Parse error:', e);
-                }
-            };
-
-            es.onerror = function () {
-                statusEl.textContent = 'RECONNECTING...';
-                es.close();
-                setTimeout(connectSSE, 2000);
-            };
-        }
-
-        connectSSE();
-
-        // Load latest data on initial page load
-        function loadLatest() {
-            fetch('/obs-latest')
-                .then(function (res) { return res.json(); })
-                .then(function (data) {
-                    if (data && data.text) applyData(data);
-                })
-                .catch(function () {
-                    console.log('Initial load standby. Retrying...');
-                    setTimeout(loadLatest, 3000);
-                });
-        }
-
-        loadLatest();
+        // Paspas nga koneksyon
+        var es = new EventSource('/obs-stream?t=' + Date.now());
+        es.onmessage = function (ev) { applyData(JSON.parse(ev.data)); };
+        
+        // Initial load
+        fetch('/obs-latest').then(r => r.json()).then(applyData);
     </script>
 </body>
 </html>
