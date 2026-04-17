@@ -33,63 +33,40 @@ class ObsSyncController extends Controller
 
     public function stream()
     {
-        // 1. I-CLOSE ANG SESSION (Important for performance)
-        if (session_status() === PHP_SESSION_ACTIVE) {
-            session_write_close();
-        }
-
-        // 2. DISABLE TIME LIMIT (Para dili maputol)
+        // Walay time limit, aron magsige og stream
         set_time_limit(0);
-
-        // 3. FORCE FLUSH (Para dili ma-buffer)
-        if (function_exists('ob_end_flush')) {
-            @ob_end_flush();
+        
+        // Paspasan ang pag-send sa data
+        if (function_exists('ob_implicit_flush')) {
+            ob_implicit_flush(1);
         }
-        ob_implicit_flush(1);
 
         return new StreamedResponse(function () {
             $lastId = null;
-            $heartbeatTimer = time(); //  Para sa heartbeat
 
             while (true) {
-                // 4. CHECK FOR CONNECTION ABORT (Kung gi-close ang browser)
-                if (connection_aborted()) {
-                    break;
-                }
+                if (connection_aborted()) break;
 
                 $data = Cache::get('obs_live_data');
                 $currentId = $data['updatedAt'] ?? null;
 
-                // 5. SEND DATA KUNG NAAY KAUSABAN
                 if ($currentId !== $lastId && $data) {
                     echo "data: " . json_encode($data) . "\n\n";
                     $lastId = $currentId;
-
-                    // FORCE FLUSH (Para ma-send dayon)
-                    if (ob_get_level() > 0) {
-                        ob_flush();
-                    }
+                    
+                    // Puwersahon ang PHP nga i-send dayon sa browser
+                    if (ob_get_level() > 0) ob_flush();
                     flush();
                 }
 
-                // 6. HEARTBEAT (Para dili ma-disconnect ang SSE)
-                if (time() - $heartbeatTimer > 15) { // Send a heartbeat every 15 seconds
-                    echo ": heartbeat\n\n";
-                    $heartbeatTimer = time();
-                    if (ob_get_level() > 0) {
-                        ob_flush();
-                    }
-                    flush();
-                }
-
-                // 7.  SMALL PAUSE (Para dili ma-overload ang server)
-                usleep(100000); // 100 milliseconds
+                // Gamay nga interval para dili mag-lag ang server (0.1 seconds delay = INSTANT reaction)
+                usleep(100000); 
             }
         }, 200, [
             'Content-Type' => 'text/event-stream',
             'Cache-Control' => 'no-cache',
             'Connection' => 'keep-alive',
-            'X-Accel-Buffering' => 'no', // Disable Nginx buffering
+            'X-Accel-Buffering' => 'no', // Disable Nginx buffer para instant sa Forge
         ]);
     }
 }
