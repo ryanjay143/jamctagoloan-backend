@@ -40,24 +40,15 @@
 
         // --- INSTANT SSE CONNECTION (Walay WSS Errors!) ---
         function connectSSE() {
-            var es = new EventSource('/obs/stream'); // Siguroa nga husto ang URL
+            // I-siguro nga naa sa api.php o web.php ang imong route
+            var es = new EventSource('/obs-stream'); 
             
-            es.onopen = function() {
+            es.onmessage = function(ev) {
+                applyData(JSON.parse(ev.data));
                 statusEl.textContent = "CONNECTED (SSE)";
             };
 
-            es.onmessage = function(ev) {
-                try {
-                    const data = JSON.parse(ev.data);
-                    applyData(data);
-                } catch (error) {
-                    console.error("Error parsing SSE data:", error, ev.data);
-                    statusEl.textContent = "SSE PARSE ERROR";
-                }
-            };
-
-            es.onerror = function(err) {
-                console.error("SSE Error:", err);
+            es.onerror = function() {
                 statusEl.textContent = "RECONNECTING...";
                 es.close();
                 setTimeout(connectSSE, 2000); // Auto reconnect kung maputol
@@ -66,20 +57,11 @@
 
         connectSSE();
 
-        // Initial Load (Para sa pagsugod)
-        function loadLatest() {
-            fetch('/obs/latest') // Siguroa nga husto ang URL
-                .then(res => res.json())
-                .then(data => {
-                    if (data && data.text) {
-                        applyData(data);
-                    }
-                })
-                .catch(err => {
-                    console.error("Error loading initial data:", err);
-                });
-        }
-        loadLatest();
+        // Initial Load
+        fetch('obs-latest')
+            .then(res => res.json())
+            .then(data => { if (data && data.text) applyData(data); })
+            .catch(err => console.log("Initial load standby"));
     </script>
 </body>
 </html>
