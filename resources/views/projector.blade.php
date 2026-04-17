@@ -1,8 +1,3 @@
-### Kompleto nga Gi-update nga HTML/Javascript para sa `projector`
-
-Ania ang kompleto ug husto nga code para sa imong `projector` view. I-copy ug i-paste kini aron masiguro nga husto ang tanan.
-
-```html
 <!doctype html>
 <html lang="en">
 <head>
