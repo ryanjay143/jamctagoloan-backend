@@ -4,7 +4,7 @@ namespace App\Events;
 
 use Illuminate\Broadcasting\Channel;
 use Illuminate\Broadcasting\InteractsWithSockets;
-use Illuminate\Contracts\Broadcasting\ShouldBroadcastNow; // <--- DAPAT "Now"
+use Illuminate\Contracts\Broadcasting\ShouldBroadcastNow;
 use Illuminate\Foundation\Events\Dispatchable;
 use Illuminate\Queue\SerializesModels;
 
@@ -12,7 +12,7 @@ class LyricsUpdated implements ShouldBroadcastNow
 {
     use Dispatchable, InteractsWithSockets, SerializesModels;
 
-    public $data;
+    public $data; // Mao ni ang ma-receive sa React
 
     public function __construct($data)
     {
@@ -21,6 +21,7 @@ class LyricsUpdated implements ShouldBroadcastNow
 
     public function broadcastOn(): Channel
     {
+        // Public channel ni, walay authentication needed
         return new Channel('lyrics-channel');
     }
 

@@ -1,135 +1,69 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="utf-8" />
-    <title>JAMC Live Output</title>
-    <style>
-        @import url('https://fonts.googleapis.com/css2?family=Oswald:wght@700&display=swap');
-
-        html, body {
-            height: 100vh;
-            width: 100vw;
-            margin: 0;
-            overflow: hidden;
-            background-color: #000;
-            transition: background-color 0.8s ease;
-            font-family: 'Oswald', sans-serif;
-        }
-
-        .center-container {
-            height: 100%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            padding: 60px;
-            box-sizing: border-box;
-        }
-
-        h1 {
-            color: #ffffff;
-            text-align: center;
-            text-transform: uppercase;
-            white-space: pre-wrap;
-            font-weight: 700;
-            opacity: 0;
-            transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
-            transform: scale(0.98);
-            text-shadow:
-                -3px -3px 0 #000,  3px -3px 0 #000,
-                -3px  3px 0 #000,  3px  3px 0 #000,
-                -4px  0px 0 #000,  4px  0px 0 #000,
-                 0px -4px 0 #000,  0px  4px 0 #000,
-                 0px 10px 30px rgba(0,0,0,0.8),
-                 0px 20px 60px rgba(0,0,0,0.6);
-            letter-spacing: 2px;
-            line-height: 1.1;
-        }
-
-        h1.visible {
-            opacity: 1;
-            transform: scale(1);
-        }
-
-        .debug-status {
-            position: fixed;
-            bottom: 10px;
-            left: 10px;
-            color: #555;
-            font-size: 10px;
-            font-family: monospace;
-            z-index: 50;
-        }
-    </style>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Projector</title>
+  <link href="https://fonts.googleapis.com/css2?family=Oswald:wght@400;700&display=swap" rel="stylesheet" />
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      width: 1920px; height: 1080px; overflow: hidden;
+      background: #000;
+      font-family: 'Oswald', sans-serif;
+      display: flex; align-items: center; justify-content: center;
+    }
+    #lyrics {
+      color: #fff;
+      text-align: center;
+      font-weight: 700;
+      text-transform: uppercase;
+      line-height: 1.1;
+      padding: 20px;
+      white-space: pre-wrap;
+      text-shadow:
+        -6px -6px 0 #000, 6px -6px 0 #000,
+        -6px  6px 0 #000, 6px  6px 0 #000,
+        -6px  0px 0 #000, 6px  0px 0 #000,
+         0px -6px 0 #000, 0px  6px 0 #000,
+        -5px -5px 0 #000, 5px -5px 0 #000,
+        -5px  5px 0 #000, 5px  5px 0 #000,
+         0px 10px 30px rgba(0,0,0,0.8);
+    }
+  </style>
 </head>
 <body>
-    <div id="status" class="debug-status">CONNECTING...</div>
-    <div class="center-container">
-        <h1 id="lyrics"></h1>
-    </div>
+  <div id="lyrics" style="font-size: 90px;"></div>
+  <script>
+    const el = document.getElementById('lyrics');
+    const body = document.body;
 
-    <script>
-        var lyricsEl = document.getElementById('lyrics');
-        var statusEl = document.getElementById('status');
+    function applyBg(bg) {
+      body.style.backgroundImage = '';
+      if (bg === 'praise') body.style.backgroundImage = 'linear-gradient(to bottom right, #4f46e5, #7c3aed, #4f46e5)';
+      else if (bg === 'worship') body.style.backgroundImage = 'linear-gradient(to top, #000000, #171717, #000000)';
+      else if (bg === 'green') body.style.backgroundColor = '#00FF00';
+      else if (bg && bg.startsWith('#')) body.style.backgroundColor = bg;
+      else body.style.backgroundColor = '#000';
+    }
 
-        function applyData(data) {
-            if (!data) return;
+    function applyState(data) {
+      if (data.text !== undefined) el.textContent = data.text;
+      if (data.fontSize) el.style.fontSize = data.fontSize + 'px';
+      if (data.fontFamily) el.style.fontFamily = data.fontFamily;
+      if (data.isBold !== undefined) el.style.fontWeight = data.isBold ? '700' : '400';
+      if (data.isUppercase !== undefined) el.style.textTransform = data.isUppercase ? 'uppercase' : 'none';
+      if (data.hasOutline !== undefined) el.style.textShadow = data.hasOutline
+        ? '-6px -6px 0 #000, 6px -6px 0 #000, -6px 6px 0 #000, 6px 6px 0 #000, 0px 10px 30px rgba(0,0,0,0.8)'
+        : 'none';
+      if (data.background !== undefined) applyBg(data.background);
+    }
 
-            var bg = data.background || 'none';
-            if (bg === 'green')   document.body.style.backgroundColor = '#00FF00';
-            else if (bg === 'praise')  document.body.style.backgroundColor = '#1e1b4b';
-            else if (bg === 'worship') document.body.style.backgroundColor = '#09090b';
-            else                       document.body.style.backgroundColor = '#000000';
+    fetch('/api/obs-state').then(r => r.json()).then(applyState).catch(() => {});
 
-            lyricsEl.style.fontSize = (data.fontSize || 90) + 'px';
-
-            if (data.text && data.text.trim() !== '') {
-                lyricsEl.textContent = data.text;
-                lyricsEl.classList.add('visible');
-            } else {
-                lyricsEl.classList.remove('visible');
-            }
-        }
-
-        // SSE connection with auto-reconnect
-        function connectSSE() {
-            // Adding ?t= param helps avoid HTTP/2 cached connections
-            var es = new EventSource('/obs-stream?t=' + Date.now());
-
-            es.onopen = function () {
-                statusEl.textContent = 'CONNECTED (SSE)';
-            };
-
-            es.onmessage = function (ev) {
-                try {
-                    applyData(JSON.parse(ev.data));
-                } catch (e) {
-                    console.error('Parse error:', e);
-                }
-            };
-
-            es.onerror = function () {
-                statusEl.textContent = 'RECONNECTING...';
-                es.close();
-                setTimeout(connectSSE, 2000);
-            };
-        }
-
-        connectSSE();
-
-        // Load latest data on initial page load
-        function loadLatest() {
-            fetch('/obs-latest')
-                .then(function (res) { return res.json(); })
-                .then(function (data) {
-                    if (data && data.text) applyData(data);
-                })
-                .catch(function () {
-                    console.log('Initial load standby. Retrying...');
-                    setTimeout(loadLatest, 3000);
-                });
-        }
-
-        loadLatest();
-    </script>
+    const es = new EventSource('/api/obs-stream');
+    es.onmessage = e => { try { applyState(JSON.parse(e.data)); } catch {} };
+    es.onerror = () => { es.close(); setInterval(() => fetch('/api/obs-state').then(r => r.json()).then(applyState).catch(() => {}), 300); };
+  </script>
 </body>
 </html>
