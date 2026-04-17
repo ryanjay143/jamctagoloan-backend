@@ -26,3 +26,4 @@ Route::post('/playlists/upload', [PlaylistController::class, 'upload']);
 
 Route::get('/obs-state', [ObsStateController::class, 'show']);
 Route::post('/obs-state', [ObsStateController::class, 'update']);
+Route::get('/obs-stream', [ObsSyncController::class, 'stream']);

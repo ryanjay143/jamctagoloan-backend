@@ -25,11 +25,13 @@ class ObsStateController extends Controller
 
     public function update(Request $request)
     {
-        $current = file_exists($this->file) 
-            ? json_decode(file_get_contents($this->file), true) ?? [] 
+        $current = file_exists($this->file)
+            ? json_decode(file_get_contents($this->file), true) ?? []
             : [];
         $merged = array_merge($current, $request->all());
+        $merged['updatedAt'] = now()->timestamp * 1000;
         file_put_contents($this->file, json_encode($merged));
+        Cache::forever('obs_live_data', $merged);
         return response()->json(['ok' => true]);
     }
 }

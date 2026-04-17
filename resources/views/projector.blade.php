@@ -47,25 +47,23 @@
       else body.style.backgroundColor = '#000';
     }
 
-    async function sync() {
-      try {
-        const res = await fetch('/api/obs-state');
-        if (!res.ok) return;
-        const data = await res.json();
-        if (data.text !== undefined) el.textContent = data.text;
-        if (data.fontSize) el.style.fontSize = data.fontSize + 'px';
-        if (data.fontFamily) el.style.fontFamily = data.fontFamily;
-        if (data.isBold !== undefined) el.style.fontWeight = data.isBold ? '700' : '400';
-        if (data.isUppercase !== undefined) el.style.textTransform = data.isUppercase ? 'uppercase' : 'none';
-        if (data.hasOutline !== undefined) el.style.textShadow = data.hasOutline
-          ? '-6px -6px 0 #000, 6px -6px 0 #000, -6px 6px 0 #000, 6px 6px 0 #000, 0px 10px 30px rgba(0,0,0,0.8)'
-          : 'none';
-        if (data.background !== undefined) applyBg(data.background);
-      } catch {}
+    function applyState(data) {
+      if (data.text !== undefined) el.textContent = data.text;
+      if (data.fontSize) el.style.fontSize = data.fontSize + 'px';
+      if (data.fontFamily) el.style.fontFamily = data.fontFamily;
+      if (data.isBold !== undefined) el.style.fontWeight = data.isBold ? '700' : '400';
+      if (data.isUppercase !== undefined) el.style.textTransform = data.isUppercase ? 'uppercase' : 'none';
+      if (data.hasOutline !== undefined) el.style.textShadow = data.hasOutline
+        ? '-6px -6px 0 #000, 6px -6px 0 #000, -6px 6px 0 #000, 6px 6px 0 #000, 0px 10px 30px rgba(0,0,0,0.8)'
+        : 'none';
+      if (data.background !== undefined) applyBg(data.background);
     }
 
-    sync();
-    setInterval(sync, 300);
+    fetch('/api/obs-state').then(r => r.json()).then(applyState).catch(() => {});
+
+    const es = new EventSource('/api/obs-stream');
+    es.onmessage = e => { try { applyState(JSON.parse(e.data)); } catch {} };
+    es.onerror = () => { es.close(); setInterval(() => fetch('/api/obs-state').then(r => r.json()).then(applyState).catch(() => {}), 300); };
   </script>
 </body>
 </html>
