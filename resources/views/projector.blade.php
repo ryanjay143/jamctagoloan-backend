@@ -40,28 +40,47 @@
 
         // --- INSTANT SSE CONNECTION (Walay WSS Errors!) ---
         function connectSSE() {
-            // I-siguro nga naa sa api.php o web.php ang imong route
-            var es = new EventSource('/obs-stream'); 
-            
-            es.onmessage = function(ev) {
-                applyData(JSON.parse(ev.data));
+            var eventSource = new EventSource('/api/obs/stream'); // Ensure correct URL
+
+            eventSource.onopen = function(event) {
                 statusEl.textContent = "CONNECTED (SSE)";
             };
 
-            es.onerror = function() {
+            eventSource.onmessage = function(event) {
+                try {
+                    const data = JSON.parse(event.data);
+                    applyData(data);
+                } catch (error) {
+                    console.error("Error parsing SSE data:", error, event.data);
+                    statusEl.textContent = "SSE PARSE ERROR";
+                }
+            };
+
+            eventSource.onerror = function(event) {
+                console.error("SSE Error:", event);
                 statusEl.textContent = "RECONNECTING...";
-                es.close();
-                setTimeout(connectSSE, 2000); // Auto reconnect kung maputol
+                eventSource.close();
+                setTimeout(connectSSE, 2000); // Auto-reconnect after 2 seconds
             };
         }
 
         connectSSE();
 
         // Initial Load
-        fetch('obs-latest')
-            .then(res => res.json())
-            .then(data => { if (data && data.text) applyData(data); })
-            .catch(err => console.log("Initial load standby"));
+        function loadLatest() {
+            fetch('/api/obs/latest') // Ensure correct URL
+                .then(res => res.json())
+                .then(data => {
+                    if (data && data.text) {
+                        applyData(data);
+                    }
+                })
+                .catch(err => {
+                    console.error("Initial load error:", err);
+                    statusEl.textContent = "INITIAL LOAD FAILED"; // Update status on error
+                });
+        }
+        loadLatest();
     </script>
 </body>
 </html>
