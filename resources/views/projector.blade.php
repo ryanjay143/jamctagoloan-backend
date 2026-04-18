@@ -33,7 +33,7 @@
   </style>
 </head>
 <body>
-  <div id="lyrics" style="font-size: 100px;"></div>
+  <div id="lyrics" style="font-size: 90px;"></div>
   <script>
     const el = document.getElementById('lyrics');
     const body = document.body;
