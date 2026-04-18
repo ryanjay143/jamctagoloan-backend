@@ -63,17 +63,18 @@
     async function sync() {
       try {
         const res = await fetch('/api/obs-state');
-        if (!res.ok) return;
-        const data = await res.json();
-        if (data.updatedAt !== lastUpdatedAt) {
-          lastUpdatedAt = data.updatedAt;
-          applyState(data);
+        if (res.ok) {
+          const data = await res.json();
+          if (data.updatedAt !== lastUpdatedAt) {
+            lastUpdatedAt = data.updatedAt;
+            applyState(data);
+          }
         }
       } catch {}
+      setTimeout(sync, 150);
     }
 
     sync();
-    setInterval(sync, 100);
   </script>
 </body>
 </html>
