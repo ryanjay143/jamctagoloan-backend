@@ -17,16 +17,13 @@ class BackgroundVideoController extends Controller
 
         $file = $validated['video'];
         $extension = $file->getClientOriginalExtension() ?: 'mp4';
-        $filename = Str::uuid()->toString() . '.' . $extension;
+        $filename = Str::uuid() . '.' . $extension;
         $path = $file->storeAs('background-videos', $filename, 'public');
-
-        $basePath = rtrim($request->getSchemeAndHttpHost() . $request->getBasePath(), '/');
-        $url = $basePath . '/storage/' . ltrim($path, '/');
 
         return response()->json([
             'ok' => true,
             'path' => $path,
-            'url' => $url,
+            'url' => Storage::disk('public')->url($path),
             'name' => $file->getClientOriginalName(),
         ]);
     }
@@ -38,6 +35,7 @@ class BackgroundVideoController extends Controller
         ]);
 
         $path = ltrim($validated['path'], '/');
+
         if (!Str::startsWith($path, 'background-videos/')) {
             return response()->json(['message' => 'Invalid background video path.'], 422);
         }
