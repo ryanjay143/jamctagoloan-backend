@@ -35,6 +35,7 @@
 <body>
   <div id="lyrics" style="font-size: 90px;"></div>
   <script>
+    const useSse = @json(!app()->isLocal());
     const el = document.getElementById('lyrics');
     const body = document.body;
 
@@ -49,32 +50,85 @@
 
     function applyState(data) {
       if (data.text !== undefined) el.textContent = data.text;
+      isOutputCleared = !data.text || !String(data.text).trim();
       if (data.fontSize) el.style.fontSize = data.fontSize + 'px';
       if (data.fontFamily) el.style.fontFamily = data.fontFamily;
-      if (data.isBold !== undefined) el.style.fontWeight = data.isBold ? '700' : '400';
-      if (data.isUppercase !== undefined) el.style.textTransform = data.isUppercase ? 'uppercase' : 'none';
+      if (data.bold !== undefined) el.style.fontWeight = data.bold ? '700' : '400';
+      if (data.allCaps !== undefined) el.style.textTransform = data.allCaps ? 'uppercase' : 'none';
       if (data.hasOutline !== undefined) el.style.textShadow = data.hasOutline
         ? '-6px -6px 0 #000, 6px -6px 0 #000, -6px 6px 0 #000, 6px 6px 0 #000, 0px 10px 30px rgba(0,0,0,0.8)'
         : 'none';
       if (data.background !== undefined) applyBg(data.background);
     }
 
-    let lastUpdatedAt = null;
-    async function sync() {
+    let stream = null;
+    let pollTimer = null;
+    let isPolling = false;
+    let lastUpdatedAt = 0;
+    let isOutputCleared = false;
+    const ACTIVE_POLL_INTERVAL_MS = 2500;
+    const CLEARED_POLL_INTERVAL_MS = 10000;
+
+    async function pollState() {
+      if (isPolling) return;
+      isPolling = true;
+
       try {
-        const res = await fetch('/api/obs-state');
-        if (res.ok) {
-          const data = await res.json();
-          if (data.updatedAt !== lastUpdatedAt) {
-            lastUpdatedAt = data.updatedAt;
+        const response = await fetch('/api/obs-state', {
+          headers: { Accept: 'application/json' },
+          cache: 'no-store',
+        });
+
+        if (response.ok) {
+          const data = await response.json();
+          if (!data.updatedAt || data.updatedAt > lastUpdatedAt) {
+            lastUpdatedAt = data.updatedAt || Date.now();
             applyState(data);
           }
         }
       } catch {}
-      setTimeout(sync, 150);
+      finally {
+        isPolling = false;
+      }
+
+      pollTimer = setTimeout(
+        pollState,
+        isOutputCleared ? CLEARED_POLL_INTERVAL_MS : ACTIVE_POLL_INTERVAL_MS
+      );
     }
 
-    sync();
+    function connectStream() {
+      if (stream) {
+        stream.close();
+      }
+
+      stream = new EventSource('/api/obs-state/stream');
+
+      const handleMessage = (event) => {
+        try {
+          applyState(JSON.parse(event.data));
+        } catch {}
+      };
+
+      stream.addEventListener('obs-state', handleMessage);
+      stream.onmessage = handleMessage;
+
+      stream.onerror = () => {
+        stream.close();
+        setTimeout(connectStream, 1000);
+      };
+    }
+
+    if (useSse) {
+      connectStream();
+    } else {
+      pollState();
+    }
+
+    window.addEventListener('beforeunload', () => {
+      stream?.close();
+      if (pollTimer) clearTimeout(pollTimer);
+    });
   </script>
 </body>
 </html>
