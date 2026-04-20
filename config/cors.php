@@ -19,7 +19,7 @@ return [
 
     'allowed_methods' => ['*'],
 
-    'allowed_origins' => ['*', 'https://church-playlists.vercel.app'],
+    'allowed_origins' => ['*', 'http://localhost:8000', 'https://church-playlists.vercel.app'],
 
     'allowed_origins_patterns' => [],
 
