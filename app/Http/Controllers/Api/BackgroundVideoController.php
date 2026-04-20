@@ -23,7 +23,7 @@ class BackgroundVideoController extends Controller
         return response()->json([
             'ok' => true,
             'path' => $path,
-            'url' => Storage::disk('public')->url($path),
+            'url' => '/storage/' . ltrim($path, '/'),
             'name' => $file->getClientOriginalName(),
         ]);
     }
