@@ -9,6 +9,7 @@ use App\Http\Controllers\Api\PlaylistController;
 use App\Http\Controllers\Api\ObsSyncController;
 use App\Http\Controllers\Api\ObsStateController;
 use App\Http\Controllers\Api\BackgroundVideoController;
+use App\Http\Controllers\Api\PptPresentationController;
 
 Route::middleware('auth:sanctum')->get('/user', function (Request $request) {
     return $request->user();
@@ -30,3 +31,6 @@ Route::post('/obs-state', [ObsStateController::class, 'update']);
 
 Route::post('/background-videos/upload', [BackgroundVideoController::class, 'upload']);
 Route::post('/background-videos/delete', [BackgroundVideoController::class, 'delete']);
+
+Route::get('/ppt-presentations', [PptPresentationController::class, 'index']);
+Route::post('/ppt-presentations/sync', [PptPresentationController::class, 'sync']);
