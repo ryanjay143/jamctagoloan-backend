@@ -22,6 +22,7 @@ Route::post('edit-member/{id}', [EditMemberController::class, 'edit']);
 Route::get('/playlists', [PlaylistController::class, 'index']);
 Route::post('/playlists/sync', [PlaylistController::class, 'sync']);
 Route::post('/playlists/upload', [PlaylistController::class, 'upload']);
+Route::post('/playlists/fetch-song-resources', [PlaylistController::class, 'fetchSongResources']);
 
 Route::get('/obs-state', [ObsStateController::class, 'show']);
 Route::get('/obs-state/stream', [ObsStateController::class, 'stream']);
