@@ -18,7 +18,14 @@ class ObsStateController extends Controller
 
     private function defaultPayload(): array
     {
-        return ['text' => '', 'fontSize' => 60, 'background' => 'none', 'updatedAt' => 0];
+        return [
+            'text' => '',
+            'fontSize' => 60,
+            'background' => 'none',
+            'updatedAt' => 0,
+            'clientId' => '',
+            'clientSequence' => 0,
+        ];
     }
 
     private function readPayload(): array
@@ -118,7 +125,27 @@ class ObsStateController extends Controller
             ? json_decode(file_get_contents($this->file), true) ?? []
             : [];
 
-        $merged = array_merge($current, $request->all());
+        $incoming = $request->all();
+        $incomingClientId = (string) ($incoming['clientId'] ?? '');
+        $currentClientId = (string) ($current['clientId'] ?? '');
+        $incomingSequence = (int) ($incoming['clientSequence'] ?? 0);
+        $currentSequence = (int) ($current['clientSequence'] ?? 0);
+
+        if (
+            $incomingClientId !== '' &&
+            $incomingClientId === $currentClientId &&
+            $incomingSequence > 0 &&
+            $currentSequence > 0 &&
+            $incomingSequence < $currentSequence
+        ) {
+            return response()->json([
+                'ok' => true,
+                'ignored' => true,
+                'updatedAt' => $current['updatedAt'] ?? 0,
+            ]);
+        }
+
+        $merged = array_merge($current, $incoming);
         $merged['updatedAt'] = (int) round(microtime(true) * 1000);
 
         file_put_contents($this->file, json_encode($merged));
